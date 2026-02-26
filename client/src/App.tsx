@@ -17,7 +17,7 @@ function App() {
     gravity: 1,
     linLogMode: true,
     outboundAttractionDistribution: true,
-    scalingRatio: 1,
+    scalingRatio: 8,
     slowDown: 0.1,
     strongGravityMode: false,
   });
