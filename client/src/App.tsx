@@ -18,7 +18,7 @@ function App() {
     linLogMode: true,
     outboundAttractionDistribution: false,
     scalingRatio: 8,
-    slowDown: 0.1,
+    slowDown: 1.0,
     strongGravityMode: false,
   });
   const [isLoading, setIsLoading] = useState(false);
