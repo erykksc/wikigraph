@@ -16,7 +16,7 @@ function App() {
     edgeWeightInfluence: 1,
     gravity: 1,
     linLogMode: true,
-    outboundAttractionDistribution: true,
+    outboundAttractionDistribution: false,
     scalingRatio: 8,
     slowDown: 0.1,
     strongGravityMode: false,
