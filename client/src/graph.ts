@@ -285,14 +285,18 @@ export class GraphController {
       : [payload.newNodes[0], ...payload.newNodes.slice(1)];
     const centerId = centerNodeId ?? payload.newNodes[0];
 
+    const newlyAddedNodes = new Set<string>();
     newNodes.forEach((title) => {
+      if (!this.graph.hasNode(title)) {
+        newlyAddedNodes.add(title);
+      }
       this.ensureNode(title, title, NODE_COLOR);
     });
 
     if (!isSeed && centerNodeId) {
       const centerAttrs = this.graph.getNodeAttributes(centerId);
       newNodes.slice(1).forEach((title) => {
-        if (this.graph.hasNode(title)) {
+        if (newlyAddedNodes.has(title)) {
           this.graph.setNodeAttribute(
             title,
             "x",
