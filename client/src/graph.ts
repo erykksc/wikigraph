@@ -181,6 +181,12 @@ export class GraphController {
       await this.expandNode(attrs.label, node);
     });
 
+    this.sigma.on("rightClickNode", async ({ node }) => {
+      const attrs = this.graph.getNodeAttributes(node);
+      const url = `https://en.wikipedia.org/wiki/${encodeURIComponent(attrs.label)}`;
+      window.open(url, "_blank");
+    });
+
     this.sigma.on("enterNode", ({ node }) => {
       this.hoveredNode = node;
       this.hoveredNeighbors = new Set(this.graph.neighbors(node));
