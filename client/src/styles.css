@@ -136,6 +136,9 @@ body,
   color: var(--muted);
   font-size: 0.85rem;
   box-shadow: 0 12px 24px -20px var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
 }
 
 .controls-panel {

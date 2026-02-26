@@ -24,6 +24,7 @@ function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nodeCount, setNodeCount] = useState(0);
+  const [edgeCount, setEdgeCount] = useState(0);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -64,6 +65,7 @@ function App() {
     if (!graphRef.current) return;
     const interval = setInterval(() => {
       setNodeCount(graphRef.current?.getNodeCount() ?? 0);
+      setEdgeCount(graphRef.current?.getEdgeCount() ?? 0);
     }, 500);
     return () => clearInterval(interval);
   }, []);
@@ -210,7 +212,10 @@ function App() {
         <div className="status">
           <strong>Status</strong> · {status}
         </div>
-        <div className="node-count">Nodes: {nodeCount}</div>
+        <div className="node-count">
+          <div>Nodes: {nodeCount}</div>
+          <div>Edges: {edgeCount}</div>
+        </div>
         <aside className="controls-panel">
           <div className="controls-panel__title">Layout Controls</div>
           {settingControls.map((control) => {

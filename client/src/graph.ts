@@ -214,6 +214,10 @@ export class GraphController {
     return this.graph.order;
   }
 
+  getEdgeCount(): number {
+    return this.graph.size;
+  }
+
   reset() {
     this.graph.clear();
   }
