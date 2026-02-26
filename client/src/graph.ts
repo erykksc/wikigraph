@@ -72,6 +72,7 @@ type GraphControllerOptions = {
 };
 
 const NODE_COLOR = "#56ccf2";
+const EXPANDED_NODE_COLOR = "#56f28a";
 
 const BASE_NODE_SIZE = 4;
 const SIZE_SCALE = 1.4;
@@ -298,6 +299,7 @@ export class GraphController {
     }
 
     this.graph.setNodeAttribute(centerId, "expanded", true);
+    this.graph.setNodeAttribute(centerId, "color", EXPANDED_NODE_COLOR);
 
     payload.newEdges.forEach(({ fromNode, targetNode }) => {
       if (this.graph.hasNode(fromNode) && this.graph.hasNode(targetNode)) {
