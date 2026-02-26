@@ -125,15 +125,27 @@ Environment variables:
 ## Architecture Notes
 
 ### Data Flow
-1. Client sends Wikipedia article title to server
-2. Server fetches inlinks/outlinks from Wikipedia API
-3. Server caches results in Redis
-4. Client renders interactive graph with Sigma.js
+1. User enters a seed article title in the client
+2. Client calls `/expand` endpoint with the title
+3. Server fetches inlinks/outlinks from Wikipedia API
+4. Server returns `{ newNodes: string[], newEdges: {fromNode, targetNode}[] }`
+5. Server caches results in Redis (1 day TTL)
+6. Client renders/updates graph with Sigma.js
+
+### API Response Format
+```typescript
+type ExpandEdge = { fromNode: string; targetNode: string }
+type ExpandResponse = {
+  newNodes: string[]      // Center node + all outlinks
+  newEdges: ExpandEdge[] // Bidirectional edges to outlinks and inlinks
+}
+```
 
 ### Key Files
 - `server/src/server.ts`: Fastify server setup and routes
-- `server/src/wiki.ts`: Wikipedia API integration
+- `server/src/wiki.ts`: Wikipedia API integration (outlinks from pages[].links, inlinks from backlinks)
 - `server/src/cache.ts`: Redis caching layer
 - `client/src/App.tsx`: Main React component
-- `client/src/graph.ts`: Sigma.js graph controller
+- `client/src/graph.ts`: Sigma.js graph controller - handles node/edge deduplication
+- `client/src/api.ts`: API client calling `/expand` endpoint
 - `shared/src/types.ts`: Shared TypeScript types

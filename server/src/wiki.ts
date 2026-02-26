@@ -7,11 +7,17 @@ type NormalizedPage = {
   title: string
 }
 
+type WikiPage = {
+  pageid?: number
+  title?: string
+  missing?: string
+  links?: Array<{ title: string }>
+}
+
 type WikiResponse = {
   query?: {
     normalized?: Array<{ from: string; to: string }>
-    pages?: Record<string, { pageid?: number; title?: string; missing?: string }>
-    links?: Array<{ title: string }>
+    pages?: Record<string, WikiPage>
     backlinks?: Array<{ title: string }>
   }
   continue?: Record<string, string>
@@ -58,7 +64,20 @@ const collectTitles = async (baseParams: Record<string, string>): Promise<string
   do {
     const params = cont ? { ...baseParams, ...cont } : baseParams
     const data = await fetchJson(params)
-    const items = data.query?.links ?? data.query?.backlinks ?? []
+
+    let items: Array<{ title: string }> = []
+    if (baseParams.prop === 'links') {
+      const pages = data.query?.pages ?? {}
+      for (const pageId in pages) {
+        const page = pages[pageId]
+        if (page.links) {
+          items = items.concat(page.links)
+        }
+      }
+    } else {
+      items = data.query?.backlinks ?? []
+    }
+
     titles = titles.concat(items.map((item) => item.title))
     cont = data.continue
   } while (cont)

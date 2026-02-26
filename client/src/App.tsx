@@ -34,7 +34,7 @@ function App() {
         setStatus(`Expanding ${title}`);
         try {
           const payload = await expandTitle(title);
-          setStatus(`Expanded ${payload.node.title}`);
+          setStatus(`Expanded ${title}`);
           return payload;
         } catch (err) {
           const message =

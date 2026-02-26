@@ -3,8 +3,12 @@ export type ExpandNode = {
   title: string
 }
 
+export type ExpandEdge = {
+  fromNode: string
+  targetNode: string
+}
+
 export type ExpandResponse = {
-  node: ExpandNode
-  outlinks: string[]
-  inlinks: string[]
+  newNodes: string[]
+  newEdges: ExpandEdge[]
 }

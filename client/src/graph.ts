@@ -272,49 +272,39 @@ export class GraphController {
     isSeed: boolean,
     centerNodeId?: string,
   ) {
-    const nodeId = payload.node.title;
-    const label = payload.node.title;
-    const centerId = centerNodeId ?? nodeId;
+    const newNodes = isSeed ? payload.newNodes : [payload.newNodes[0], ...payload.newNodes.slice(1)]
+    const centerId = centerNodeId ?? payload.newNodes[0]
 
-    this.ensureNode(nodeId, label, NODE_COLOR, BASE_NODE_SIZE + 4);
-    this.graph.setNodeAttribute(nodeId, "expanded", true);
-
-    const centerAttrs = this.graph.getNodeAttributes(centerId);
-
-    payload.outlinks.forEach((title) => {
-      const id = title;
-      this.ensureNode(id, title, NODE_COLOR);
-      this.graph.setNodeAttribute(
-        id,
-        "x",
-        centerAttrs.x + randomBetween(-4, 4),
-      );
-      this.graph.setNodeAttribute(
-        id,
-        "y",
-        centerAttrs.y + randomBetween(-4, 4),
-      );
-      this.addEdge(centerId, id);
-      this.addEdge(id, centerId);
-      this.updateNodeSize(id);
+    newNodes.forEach((title) => {
+      this.ensureNode(title, title, NODE_COLOR);
     });
 
-    payload.inlinks.forEach((title) => {
-      const id = title;
-      this.ensureNode(id, title, NODE_COLOR);
-      this.graph.setNodeAttribute(
-        id,
-        "x",
-        centerAttrs.x + randomBetween(-4, 4),
-      );
-      this.graph.setNodeAttribute(
-        id,
-        "y",
-        centerAttrs.y + randomBetween(-4, 4),
-      );
-      this.addEdge(id, centerId);
-      this.addEdge(centerId, id);
-      this.updateNodeSize(id);
+    if (!isSeed && centerNodeId) {
+      const centerAttrs = this.graph.getNodeAttributes(centerId);
+      newNodes.slice(1).forEach((title) => {
+        if (this.graph.hasNode(title)) {
+          this.graph.setNodeAttribute(
+            title,
+            "x",
+            centerAttrs.x + randomBetween(-4, 4),
+          );
+          this.graph.setNodeAttribute(
+            title,
+            "y",
+            centerAttrs.y + randomBetween(-4, 4),
+          );
+        }
+      });
+    }
+
+    this.graph.setNodeAttribute(centerId, "expanded", true);
+
+    payload.newEdges.forEach(({ fromNode, targetNode }) => {
+      if (this.graph.hasNode(fromNode) && this.graph.hasNode(targetNode)) {
+        this.addEdge(fromNode, targetNode);
+        this.updateNodeSize(fromNode);
+        this.updateNodeSize(targetNode);
+      }
     });
 
     this.updateNodeSize(centerId);
