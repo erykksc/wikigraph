@@ -157,7 +157,8 @@ export class GraphController {
 
       const source = this.graph.source(edge);
       const target = this.graph.target(edge);
-      const isConnected = source === this.hoveredNode || target === this.hoveredNode;
+      const isConnected =
+        source === this.hoveredNode || target === this.hoveredNode;
 
       if (isConnected) {
         return {
@@ -273,8 +274,10 @@ export class GraphController {
     isSeed: boolean,
     centerNodeId?: string,
   ) {
-    const newNodes = isSeed ? payload.newNodes : [payload.newNodes[0], ...payload.newNodes.slice(1)]
-    const centerId = centerNodeId ?? payload.newNodes[0]
+    const newNodes = isSeed
+      ? payload.newNodes
+      : [payload.newNodes[0], ...payload.newNodes.slice(1)];
+    const centerId = centerNodeId ?? payload.newNodes[0];
 
     newNodes.forEach((title) => {
       this.ensureNode(title, title, NODE_COLOR);

@@ -13,7 +13,7 @@
   box-sizing: border-box;
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap");
 
 html,
 body,
@@ -22,10 +22,10 @@ body,
   height: 100%;
   margin: 0;
   font-family: "Space Grotesk", "Futura", "Trebuchet MS", sans-serif;
-  background: radial-gradient(circle at 20% 20%, #1b2c3f 0%, transparent 45%),
+  background:
+    radial-gradient(circle at 20% 20%, #1b2c3f 0%, transparent 45%),
     radial-gradient(circle at 80% 10%, #132438 0%, transparent 50%),
-    radial-gradient(circle at 50% 80%, #0c1420 0%, transparent 55%),
-    var(--bg);
+    radial-gradient(circle at 50% 80%, #0c1420 0%, transparent 55%), var(--bg);
   color: var(--text);
 }
 
@@ -40,7 +40,11 @@ body,
   align-items: center;
   justify-content: space-between;
   padding: 1.2rem 1.6rem;
-  background: linear-gradient(135deg, rgba(15, 29, 42, 0.9), rgba(8, 15, 25, 0.9));
+  background: linear-gradient(
+    135deg,
+    rgba(15, 29, 42, 0.9),
+    rgba(8, 15, 25, 0.9)
+  );
   border-bottom: 1px solid var(--panel-border);
   box-shadow: 0 16px 24px -20px var(--shadow);
 }
@@ -88,7 +92,7 @@ body,
   cursor: pointer;
 }
 
-.controls button[type='button'] {
+.controls button[type="button"] {
   background: rgba(16, 26, 40, 0.9);
   color: var(--text);
   border: 1px solid var(--panel-border);
@@ -177,7 +181,7 @@ body,
   font-variant-numeric: tabular-nums;
 }
 
-.slider input[type='range'] {
+.slider input[type="range"] {
   width: 100%;
 }
 
