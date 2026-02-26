@@ -4,6 +4,55 @@ import FA2 from "graphology-layout-forceatlas2/worker";
 import type { ForceAtlas2Settings } from "graphology-layout-forceatlas2";
 import type { ExpandResponse } from "@wikipedia-graph/shared";
 
+const drawLabelWithBackground = (
+  context: CanvasRenderingContext2D,
+  data: {
+    x: number;
+    y: number;
+    size: number;
+    label?: string | null;
+    labelColor?: string;
+    labelBackground?: boolean;
+    labelBackgroundColor?: string;
+  },
+  settings: {
+    labelSize: number;
+    labelFont: string;
+    labelWeight: string;
+    labelColor: { attribute?: string; color?: string } | { color: string };
+  },
+) => {
+  if (!data.label) return;
+
+  const { labelSize, labelFont, labelWeight } = settings;
+  context.font = `${labelWeight} ${labelSize}px ${labelFont}`;
+
+  const textWidth = context.measureText(data.label).width;
+  const paddingX = 6;
+  const paddingY = 3;
+  const x = data.x + data.size + 3;
+  const y = data.y - labelSize / 2 - paddingY;
+  const boxWidth = textWidth + paddingX * 2;
+  const boxHeight = labelSize + paddingY * 2;
+
+  if (data.labelBackground) {
+    context.fillStyle = data.labelBackgroundColor ?? "#ffffff";
+    context.beginPath();
+    context.roundRect(x - paddingX, y, boxWidth, boxHeight, 6);
+    context.fill();
+  }
+
+  const labelColor =
+    "attribute" in settings.labelColor && settings.labelColor.attribute
+      ? (data as Record<string, string>)[settings.labelColor.attribute] ||
+        settings.labelColor.color ||
+        "#000"
+      : settings.labelColor.color;
+
+  context.fillStyle = data.labelColor ?? labelColor;
+  context.fillText(data.label, x, data.y + labelSize / 3);
+};
+
 type GraphNodeAttributes = {
   label: string;
   x: number;
@@ -36,6 +85,8 @@ export class GraphController {
   private layout: FA2;
   private layoutSettings: ForceAtlas2Settings;
   private onExpand: (title: string) => Promise<ExpandResponse>;
+  private hoveredNode: string | null = null;
+  private hoveredNeighbors: Set<string> | null = null;
 
   constructor(options: GraphControllerOptions) {
     this.sigma = new Sigma(this.graph, options.container, {
@@ -44,6 +95,8 @@ export class GraphController {
       labelGridCellSize: 80,
       labelRenderedSizeThreshold: 8,
       zIndex: true,
+      labelColor: { attribute: "labelColor", color: "#101826" },
+      labelRenderer: drawLabelWithBackground,
     });
     this.layoutSettings = {
       adjustSizes: true,
@@ -57,11 +110,86 @@ export class GraphController {
     this.onExpand = options.onExpand;
     this.layout.start();
 
+    this.sigma.setSetting("nodeReducer", (node, data) => {
+      if (!this.hoveredNode) {
+        return data;
+      }
+
+      const isHovered = node === this.hoveredNode;
+      const isNeighbor = this.hoveredNeighbors?.has(node);
+
+      if (isHovered) {
+        return {
+          ...data,
+          color: NODE_COLOR,
+          size: data.size * 1.2,
+          labelBackground: true,
+          labelBackgroundColor: "#ffffff",
+          labelColor: "#101826",
+          zIndex: 1,
+        };
+      }
+
+      if (isNeighbor) {
+        return {
+          ...data,
+          color: NODE_COLOR,
+          labelBackground: true,
+          labelBackgroundColor: "#ffffff",
+          labelColor: "#101826",
+          zIndex: 0.5,
+        };
+      }
+
+      return {
+        ...data,
+        color: "rgba(32, 46, 60, 0.9)",
+        label: "",
+        zIndex: 0,
+      };
+    });
+
+    this.sigma.setSetting("edgeReducer", (edge, data) => {
+      if (!this.hoveredNode) {
+        return data;
+      }
+
+      const source = this.graph.source(edge);
+      const target = this.graph.target(edge);
+      const isConnected = source === this.hoveredNode || target === this.hoveredNode;
+
+      if (isConnected) {
+        return {
+          ...data,
+          color: "rgba(255,255,255,0.35)",
+          zIndex: 1,
+        };
+      }
+
+      return {
+        ...data,
+        hidden: true,
+      };
+    });
+
     this.sigma.on("clickNode", async ({ node }) => {
       const attrs = this.graph.getNodeAttributes(node);
       if (attrs.expanded) return;
       this.graph.setNodeAttribute(node, "expanded", true);
       await this.expandNode(attrs.label, node);
+    });
+
+    this.sigma.on("enterNode", ({ node }) => {
+      this.hoveredNode = node;
+      this.hoveredNeighbors = new Set(this.graph.neighbors(node));
+      this.hoveredNeighbors.add(node);
+      this.sigma.refresh();
+    });
+
+    this.sigma.on("leaveNode", () => {
+      this.hoveredNode = null;
+      this.hoveredNeighbors = null;
+      this.sigma.refresh();
     });
   }
 
