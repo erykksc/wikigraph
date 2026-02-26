@@ -64,11 +64,14 @@ function App() {
         key: 'adjustSizes' as const,
         label: 'Adjust Sizes',
         type: 'boolean' as const,
+        description: "Account for node sizes in layout forces.",
       },
       {
         key: 'barnesHutOptimize' as const,
         label: 'Barnes-Hut Optimize',
         type: 'boolean' as const,
+        description:
+          'Use Barnes-Hut approximation for faster repulsion (O(n log n)).',
       },
       {
         key: 'barnesHutTheta' as const,
@@ -77,6 +80,7 @@ function App() {
         min: 0.1,
         max: 1.2,
         step: 0.05,
+        description: 'Barnes-Hut accuracy parameter (lower is more accurate).',
       },
       {
         key: 'edgeWeightInfluence' as const,
@@ -85,6 +89,7 @@ function App() {
         min: 0,
         max: 3,
         step: 0.1,
+        description: 'How much edge weights affect attraction strength.',
       },
       {
         key: 'gravity' as const,
@@ -93,16 +98,19 @@ function App() {
         min: 0,
         max: 5,
         step: 0.1,
+        description: 'Pulls nodes toward the center of the layout.',
       },
       {
         key: 'linLogMode' as const,
         label: 'LinLog Mode',
         type: 'boolean' as const,
+        description: 'Use LinLog energy model for clustering.',
       },
       {
         key: 'outboundAttractionDistribution' as const,
         label: 'Outbound Attraction',
         type: 'boolean' as const,
+        description: 'Distribute attraction along outbound edges.',
       },
       {
         key: 'scalingRatio' as const,
@@ -111,6 +119,7 @@ function App() {
         min: 0.1,
         max: 8,
         step: 0.1,
+        description: 'Strength of repulsion between nodes.',
       },
       {
         key: 'slowDown' as const,
@@ -119,11 +128,13 @@ function App() {
         min: 0.1,
         max: 10,
         step: 0.1,
+        description: 'Dampens movement for more stable layouts.',
       },
       {
         key: 'strongGravityMode' as const,
         label: 'Strong Gravity',
         type: 'boolean' as const,
+        description: 'Use a stronger gravity model to keep clusters tighter.',
       },
     ],
     [],
@@ -194,7 +205,11 @@ function App() {
             if (control.type === 'boolean') {
               const checked = Boolean(layoutSettings[control.key])
               return (
-                <label className="toggle" key={control.key}>
+                <label
+                  className="toggle"
+                  key={control.key}
+                  title={control.description}
+                >
                   <input
                     type="checkbox"
                     checked={checked}
@@ -212,7 +227,11 @@ function App() {
 
             const value = Number(layoutSettings[control.key] ?? 0)
             return (
-              <label className="slider" key={control.key}>
+              <label
+                className="slider"
+                key={control.key}
+                title={control.description}
+              >
                 <div>
                   <span>{control.label}</span>
                   <span className="slider__value">{value.toFixed(2)}</span>
