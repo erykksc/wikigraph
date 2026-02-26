@@ -27,22 +27,13 @@ app.get("/expand", async (request, reply) => {
       return cached;
     }
 
-    const [outlinks, inlinks] = await Promise.all([
-      fetchOutlinks(normalized.title),
-      fetchInlinks(normalized.title),
-    ]);
+    const [outlinks] = await Promise.all([fetchOutlinks(normalized.title)]);
 
     const newNodes = [normalized.title, ...outlinks];
     const newEdges: ExpandResponse["newEdges"] = [];
 
     outlinks.forEach((target) => {
       newEdges.push({ fromNode: normalized.title, targetNode: target });
-      newEdges.push({ fromNode: target, targetNode: normalized.title });
-    });
-
-    inlinks.forEach((target) => {
-      newEdges.push({ fromNode: normalized.title, targetNode: target });
-      newEdges.push({ fromNode: target, targetNode: normalized.title });
     });
 
     const payload: ExpandResponse = {
