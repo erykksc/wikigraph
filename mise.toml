@@ -1,0 +1,9 @@
+[tools]
+node = "latest"
+
+[env]
+VALKEY_URL = "redis://localhost:6379"
+
+[tasks.valkey]
+description = "Run Valkey in Docker (ephemeral)"
+run = "docker run --rm -it -p 6379:6379 --name valkey valkey/valkey:latest"

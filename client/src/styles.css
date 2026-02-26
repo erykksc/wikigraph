@@ -1,0 +1,222 @@
+:root {
+  --bg: #0f1d2a;
+  --panel: rgba(15, 29, 42, 0.8);
+  --panel-border: rgba(255, 255, 255, 0.08);
+  --text: #e6edf5;
+  --muted: rgba(230, 237, 245, 0.7);
+  --accent: #f2c94c;
+  --accent-2: #56ccf2;
+  --shadow: rgba(2, 8, 20, 0.5);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap');
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  font-family: "Space Grotesk", "Futura", "Trebuchet MS", sans-serif;
+  background: radial-gradient(circle at 20% 20%, #1b2c3f 0%, transparent 45%),
+    radial-gradient(circle at 80% 10%, #132438 0%, transparent 50%),
+    radial-gradient(circle at 50% 80%, #0c1420 0%, transparent 55%),
+    var(--bg);
+  color: var(--text);
+}
+
+.app {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100%;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.2rem 1.6rem;
+  background: linear-gradient(135deg, rgba(15, 29, 42, 0.9), rgba(8, 15, 25, 0.9));
+  border-bottom: 1px solid var(--panel-border);
+  box-shadow: 0 16px 24px -20px var(--shadow);
+}
+
+.header h1 {
+  font-size: 1.1rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.header span {
+  color: var(--muted);
+  font-size: 0.85rem;
+  letter-spacing: 0.12em;
+}
+
+.controls {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+}
+
+.controls input {
+  min-width: 220px;
+  padding: 0.65rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid var(--panel-border);
+  background: rgba(10, 18, 28, 0.7);
+  color: var(--text);
+  outline: none;
+}
+
+.controls input::placeholder {
+  color: var(--muted);
+}
+
+.controls button {
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: linear-gradient(140deg, var(--accent), #f2994a);
+  color: #1b1a14;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.controls button[type='button'] {
+  background: rgba(16, 26, 40, 0.9);
+  color: var(--text);
+  border: 1px solid var(--panel-border);
+}
+
+.controls button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.canvas {
+  position: relative;
+}
+
+.graph-container {
+  position: absolute;
+  inset: 0;
+}
+
+.status {
+  position: absolute;
+  right: 1.5rem;
+  bottom: 1.5rem;
+  padding: 0.7rem 1rem;
+  background: var(--panel);
+  border-radius: 12px;
+  border: 1px solid var(--panel-border);
+  color: var(--muted);
+  font-size: 0.85rem;
+  box-shadow: 0 12px 24px -20px var(--shadow);
+}
+
+.controls-panel {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  width: 260px;
+  padding: 1rem;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 16px 28px -20px var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.controls-panel__title {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.toggle input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent-2);
+}
+
+.slider {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--text);
+}
+
+.slider > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.slider__value {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.slider input[type='range'] {
+  width: 100%;
+}
+
+.status strong {
+  color: var(--text);
+}
+
+.error-banner {
+  position: absolute;
+  left: 1.5rem;
+  bottom: 1.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(60, 20, 30, 0.9);
+  border: 1px solid rgba(255, 180, 180, 0.4);
+  border-radius: 12px;
+  color: #ffd6d6;
+  font-size: 0.85rem;
+  max-width: 320px;
+}
+
+@media (max-width: 800px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.8rem;
+  }
+
+  .controls {
+    width: 100%;
+  }
+
+  .controls input {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .controls-panel {
+    position: static;
+    width: 100%;
+    margin: 0 1.5rem 1.5rem;
+  }
+}
