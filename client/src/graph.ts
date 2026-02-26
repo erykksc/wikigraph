@@ -210,6 +210,10 @@ export class GraphController {
     this.sigma.getCamera().animatedReset({ duration: 600 });
   }
 
+  getNodeCount(): number {
+    return this.graph.order;
+  }
+
   reset() {
     this.graph.clear();
   }

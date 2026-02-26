@@ -125,6 +125,19 @@ body,
   box-shadow: 0 12px 24px -20px var(--shadow);
 }
 
+.node-count {
+  position: absolute;
+  left: 1.5rem;
+  bottom: 1.5rem;
+  padding: 0.7rem 1rem;
+  background: var(--panel);
+  border-radius: 12px;
+  border: 1px solid var(--panel-border);
+  color: var(--muted);
+  font-size: 0.85rem;
+  box-shadow: 0 12px 24px -20px var(--shadow);
+}
+
 .controls-panel {
   position: absolute;
   top: 1.5rem;

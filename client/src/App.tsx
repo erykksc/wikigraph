@@ -23,6 +23,7 @@ function App() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [nodeCount, setNodeCount] = useState(0);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -58,6 +59,14 @@ function App() {
     if (!graphRef.current) return;
     graphRef.current.updateLayoutSettings(layoutSettings);
   }, [layoutSettings]);
+
+  useEffect(() => {
+    if (!graphRef.current) return;
+    const interval = setInterval(() => {
+      setNodeCount(graphRef.current?.getNodeCount() ?? 0);
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
 
   const settingControls = useMemo(
     () => [
@@ -201,6 +210,7 @@ function App() {
         <div className="status">
           <strong>Status</strong> · {status}
         </div>
+        <div className="node-count">Nodes: {nodeCount}</div>
         <aside className="controls-panel">
           <div className="controls-panel__title">Layout Controls</div>
           {settingControls.map((control) => {
