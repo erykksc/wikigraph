@@ -1,1 +1,1 @@
-export type { ExpandNode, ExpandResponse } from "./types.js";
+export type { ExpandEdge, ExpandNode, ExpandResponse } from "./types.js";

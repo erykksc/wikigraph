@@ -2,7 +2,7 @@ import Graph from "graphology";
 import Sigma from "sigma";
 import FA2 from "graphology-layout-forceatlas2/worker";
 import type { ForceAtlas2Settings } from "graphology-layout-forceatlas2";
-import type { ExpandResponse } from "@wikipedia-graph/shared";
+import type { ExpandEdge, ExpandResponse } from "@wikipedia-graph/shared";
 import { defaultLayoutSettings } from "./layout-config";
 
 const drawLabelWithBackground = (
@@ -108,6 +108,8 @@ export class GraphController {
   private onEdgeCountChange?: (count: number) => void;
   private hoveredNode: string | null = null;
   private hoveredNeighbors: Set<string> | null = null;
+  private pendingEdges = new Map<string, ExpandEdge>();
+  private pendingEdgesByNode = new Map<string, Set<string>>();
 
   constructor(options: GraphControllerOptions) {
     this.sigma = new Sigma(this.graph, options.container, {
@@ -242,6 +244,8 @@ export class GraphController {
 
   reset() {
     this.graph.clear();
+    this.pendingEdges.clear();
+    this.pendingEdgesByNode.clear();
     this.notifyCounts();
   }
 
@@ -305,6 +309,86 @@ export class GraphController {
     });
   }
 
+  private edgeKey(fromNode: string, targetNode: string): string {
+    return `${fromNode}->${targetNode}`;
+  }
+
+  private canAttachEdge(fromNode: string, targetNode: string): boolean {
+    return this.graph.hasNode(fromNode) && this.graph.hasNode(targetNode);
+  }
+
+  private storePendingEdge(edge: ExpandEdge) {
+    const key = this.edgeKey(edge.fromNode, edge.targetNode);
+    if (this.graph.hasEdge(key) || this.pendingEdges.has(key)) {
+      return;
+    }
+
+    this.pendingEdges.set(key, edge);
+
+    [edge.fromNode, edge.targetNode].forEach((nodeId) => {
+      const indexedEdges = this.pendingEdgesByNode.get(nodeId);
+      if (indexedEdges) {
+        indexedEdges.add(key);
+        return;
+      }
+      this.pendingEdgesByNode.set(nodeId, new Set([key]));
+    });
+  }
+
+  private removePendingEdge(edgeKey: string) {
+    const edge = this.pendingEdges.get(edgeKey);
+    if (!edge) {
+      return;
+    }
+
+    this.pendingEdges.delete(edgeKey);
+    [edge.fromNode, edge.targetNode].forEach((nodeId) => {
+      const indexedEdges = this.pendingEdgesByNode.get(nodeId);
+      if (!indexedEdges) {
+        return;
+      }
+      indexedEdges.delete(edgeKey);
+      if (indexedEdges.size === 0) {
+        this.pendingEdgesByNode.delete(nodeId);
+      }
+    });
+  }
+
+  private tryAttachPendingForNodes(nodeIds: Iterable<string>) {
+    const candidateEdgeKeys = new Set<string>();
+
+    for (const nodeId of nodeIds) {
+      const indexedEdges = this.pendingEdgesByNode.get(nodeId);
+      if (!indexedEdges) {
+        continue;
+      }
+      indexedEdges.forEach((edgeKey) => {
+        candidateEdgeKeys.add(edgeKey);
+      });
+    }
+
+    candidateEdgeKeys.forEach((edgeKey) => {
+      const edge = this.pendingEdges.get(edgeKey);
+      if (!edge) {
+        return;
+      }
+
+      if (this.graph.hasEdge(edgeKey)) {
+        this.removePendingEdge(edgeKey);
+        return;
+      }
+
+      if (!this.canAttachEdge(edge.fromNode, edge.targetNode)) {
+        return;
+      }
+
+      this.addEdge(edge.fromNode, edge.targetNode);
+      this.updateNodeSize(edge.fromNode);
+      this.updateNodeSize(edge.targetNode);
+      this.removePendingEdge(edgeKey);
+    });
+  }
+
   private updateNodeSize(nodeId: string) {
     const degree = this.graph.degree(nodeId);
     const size = BASE_NODE_SIZE + Math.sqrt(degree) * SIZE_SCALE;
@@ -348,13 +432,25 @@ export class GraphController {
     this.graph.setNodeAttribute(centerId, "expanded", true);
     this.graph.setNodeAttribute(centerId, "color", EXPANDED_NODE_COLOR);
 
-    payload.newEdges.forEach(({ fromNode, targetNode }) => {
-      if (this.graph.hasNode(fromNode) && this.graph.hasNode(targetNode)) {
-        this.addEdge(fromNode, targetNode);
-        this.updateNodeSize(fromNode);
-        this.updateNodeSize(targetNode);
+    payload.newEdges.forEach((edge) => {
+      const edgeKey = this.edgeKey(edge.fromNode, edge.targetNode);
+
+      if (this.graph.hasEdge(edgeKey)) {
+        this.removePendingEdge(edgeKey);
+        return;
       }
+
+      if (!this.canAttachEdge(edge.fromNode, edge.targetNode)) {
+        this.storePendingEdge(edge);
+        return;
+      }
+
+      this.addEdge(edge.fromNode, edge.targetNode);
+      this.updateNodeSize(edge.fromNode);
+      this.updateNodeSize(edge.targetNode);
     });
+
+    this.tryAttachPendingForNodes(newNodes);
 
     this.updateNodeSize(centerId);
     this.notifyCounts();
