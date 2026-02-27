@@ -1,12 +1,8 @@
-use parse_mediawiki_sql::{iterate_sql_insertions, schemas::Page, utils::memory_map};
+use std::io::{self, BufWriter, Write};
 
-fn csv_escape(value: &str) -> String {
-    if value.contains([',', '"', '\n', '\r']) {
-        format!("\"{}\"", value.replace('"', "\"\""))
-    } else {
-        value.to_string()
-    }
-}
+use parse_mediawiki_sql::utils::memory_map;
+use wikidump_importer::outputs::csv::{write_page_header, write_page_row};
+use wikidump_importer::parsers::page::for_each_row;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let input_path = std::env::args()
@@ -14,13 +10,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .unwrap_or_else(|| "page.sql".to_string());
 
     let page_sql = unsafe { memory_map(&input_path)? };
+    let stdout = io::stdout();
+    let mut out = BufWriter::new(stdout.lock());
 
-    println!("pageName,pageId");
+    write_page_header(&mut out)?;
 
-    for Page { id, title, .. } in &mut iterate_sql_insertions(&page_sql) {
-        let page_name = title.into_inner();
-        println!("{},{}", csv_escape(&page_name), id.into_inner());
-    }
+    for_each_row(&page_sql, |row| {
+        write_page_row(&mut out, &row)?;
+        Ok::<(), std::io::Error>(())
+    })?;
+
+    out.flush()?;
 
     Ok(())
 }
