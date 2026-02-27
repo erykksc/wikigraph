@@ -10,13 +10,16 @@ pub struct PageRow {
 
 pub fn for_each_row<F>(sql: &[u8], mut f: F) -> io::Result<()>
 where
-    F: FnMut(PageRow) -> io::Result<()>,
+    F: FnMut(PageRow) -> io::Result<bool>,
 {
     for Page { id, title, .. } in &mut iterate_sql_insertions(sql) {
-        f(PageRow {
+        let should_continue = f(PageRow {
             id: id.into_inner(),
             title: title.into_inner(),
         })?;
+        if !should_continue {
+            break;
+        }
     }
 
     Ok(())

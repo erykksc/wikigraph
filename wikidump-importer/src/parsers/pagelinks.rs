@@ -1,6 +1,6 @@
 use std::io::{self, BufRead};
 
-use crate::sql_parsing::{find_insert_values_start, parse_i32, parse_u32, parse_u64, skip_spaces};
+use crate::sql_parsing::{parse_i32, parse_u32, parse_u64, skip_spaces};
 
 const INSERT_PREFIX: &[u8] = b"INSERT INTO `pagelinks` VALUES ";
 
@@ -71,19 +71,104 @@ fn parse_row(values: &[u8], mut i: usize) -> io::Result<(PageLinkRow, usize)> {
 
 pub struct PageLinksIter<R: BufRead> {
     reader: R,
-    line: Vec<u8>,
-    values_start: Option<usize>,
-    cursor: usize,
+    buf: [u8; 8192],
+    buf_len: usize,
+    buf_pos: usize,
+    prefix_match: usize,
+    in_values: bool,
+    tuple_buf: Vec<u8>,
+    in_quote: bool,
+    quote_pending: bool,
+    after_backslash: bool,
+    finished: bool,
 }
 
 impl<R: BufRead> PageLinksIter<R> {
     pub fn new(reader: R) -> Self {
         Self {
             reader,
-            line: Vec::new(),
-            values_start: None,
-            cursor: 0,
+            buf: [0; 8192],
+            buf_len: 0,
+            buf_pos: 0,
+            prefix_match: 0,
+            in_values: false,
+            tuple_buf: Vec::new(),
+            in_quote: false,
+            quote_pending: false,
+            after_backslash: false,
+            finished: false,
         }
+    }
+
+    fn process_byte(&mut self, b: u8) -> Option<io::Result<PageLinkRow>> {
+        if !self.in_values {
+            if b == INSERT_PREFIX[self.prefix_match] {
+                self.prefix_match += 1;
+                if self.prefix_match == INSERT_PREFIX.len() {
+                    self.in_values = true;
+                    self.prefix_match = 0;
+                }
+            } else {
+                self.prefix_match = usize::from(b == INSERT_PREFIX[0]);
+            }
+            return None;
+        }
+
+        if self.tuple_buf.is_empty() {
+            if b == b'(' {
+                self.tuple_buf.push(b);
+                self.in_quote = false;
+                self.quote_pending = false;
+                self.after_backslash = false;
+            } else if b == b';' {
+                self.in_values = false;
+            }
+            return None;
+        }
+
+        self.tuple_buf.push(b);
+
+        if self.in_quote {
+            if self.quote_pending {
+                if b == b'\'' {
+                    self.quote_pending = false;
+                    return None;
+                }
+                self.in_quote = false;
+                self.quote_pending = false;
+            } else if self.after_backslash {
+                self.after_backslash = false;
+                return None;
+            } else {
+                match b {
+                    b'\\' => {
+                        self.after_backslash = true;
+                        return None;
+                    }
+                    b'\'' => {
+                        self.quote_pending = true;
+                        return None;
+                    }
+                    _ => return None,
+                }
+            }
+        }
+
+        if !self.in_quote {
+            if b == b'\'' {
+                self.in_quote = true;
+                self.quote_pending = false;
+                self.after_backslash = false;
+                return None;
+            }
+
+            if b == b')' {
+                let tuple = std::mem::take(&mut self.tuple_buf);
+                return Some(parse_row(&tuple, 0).map(|(row, _)| row));
+            }
+        }
+
+        None
     }
 }
 
@@ -91,42 +176,40 @@ impl<R: BufRead> Iterator for PageLinksIter<R> {
     type Item = io::Result<PageLinkRow>;
 
     fn next(&mut self) -> Option<Self::Item> {
+        if self.finished {
+            return None;
+        }
+
         loop {
-            if let Some(values_start) = self.values_start {
-                let values = &self.line[values_start..];
-                self.cursor = skip_spaces(values, self.cursor);
-
-                if self.cursor >= values.len() || values[self.cursor] == b';' {
-                    self.values_start = None;
-                    self.cursor = 0;
-                    continue;
-                }
-
-                if values[self.cursor] != b'(' {
-                    self.cursor += 1;
-                    continue;
-                }
-
-                match parse_row(values, self.cursor) {
-                    Ok((row, next_i)) => {
-                        self.cursor = skip_spaces(values, next_i);
-                        if self.cursor < values.len() && values[self.cursor] == b',' {
-                            self.cursor += 1;
+            if self.buf_pos >= self.buf_len {
+                match self.reader.read(&mut self.buf) {
+                    Ok(0) => {
+                        self.finished = true;
+                        if self.tuple_buf.is_empty() {
+                            return None;
                         }
-                        return Some(Ok(row));
+                        return Some(Err(io::Error::new(
+                            io::ErrorKind::InvalidData,
+                            "unexpected EOF while parsing pagelinks tuple",
+                        )));
                     }
-                    Err(err) => return Some(Err(err)),
+                    Ok(n) => {
+                        self.buf_len = n;
+                        self.buf_pos = 0;
+                    }
+                    Err(err) => {
+                        self.finished = true;
+                        return Some(Err(err));
+                    }
                 }
             }
 
-            self.line.clear();
-            match self.reader.read_until(b'\n', &mut self.line) {
-                Ok(0) => return None,
-                Ok(_) => {
-                    self.values_start = find_insert_values_start(&self.line, INSERT_PREFIX);
-                    self.cursor = 0;
+            while self.buf_pos < self.buf_len {
+                let b = self.buf[self.buf_pos];
+                self.buf_pos += 1;
+                if let Some(row) = self.process_byte(b) {
+                    return Some(row);
                 }
-                Err(err) => return Some(Err(err)),
             }
         }
     }
@@ -138,7 +221,9 @@ pub fn iter_rows<R: BufRead>(reader: R) -> PageLinksIter<R> {
 
 #[cfg(test)]
 mod tests {
-    use super::parse_row;
+    use std::io::{self, Cursor};
+
+    use super::{iter_rows, parse_row};
 
     #[test]
     fn parse_row_handles_spaces() {
@@ -148,5 +233,17 @@ mod tests {
         assert_eq!(row.from_namespace, 0);
         assert_eq!(row.target_id, 115058193);
         assert_eq!(input[i], b' ');
+    }
+
+    #[test]
+    fn iter_rows_respects_tuple_boundaries_on_single_line_insert() {
+        let sql = b"INSERT INTO `pagelinks` VALUES (10,0,11),(12,1,13),(14,-2,15);";
+        let rows = iter_rows(Cursor::new(&sql[..]))
+            .take(2)
+            .collect::<io::Result<Vec<_>>>()
+            .expect("must parse first two rows");
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0].from_id, 10);
+        assert_eq!(rows[1].from_id, 12);
     }
 }
