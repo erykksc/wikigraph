@@ -1,144 +1,160 @@
 # AGENTS.md - wikidump-importer
+
 Guide for agentic coding tools operating in this repository.
 
 ## 1. Project Snapshot
 - Language: Rust
 - Edition: 2024
-- Package: `wikidump_importer`
-- Structure: single crate with binaries under `src/bin/`
-- Purpose: parse Wikipedia SQL dumps into CSV-like exports
-- Core dependency: `parse-mediawiki-sql` (`utils` feature)
+- Crate: `wikidump_importer`
+- Type: single Cargo package with binaries in `src/bin/`
+- Purpose: parse Wikipedia SQL dumps into CSV outputs
 
 Current binaries:
-- `page` (`src/bin/page.rs`): parses `page.sql`, outputs `pageName,pageId`
-- `pagelinks` (`src/bin/pagelinks.rs`): parses `pagelinks.sql`, outputs `from_page_id,from_namespace,linktarget_id`
+- `page` (`src/bin/page.rs`)
+- `pagelinks` (`src/bin/pagelinks.rs`)
+- `linktarget` (`src/bin/linktarget.rs`)
 
-Repository layout:
-- `Cargo.toml`: metadata and dependencies
-- `Cargo.lock`: dependency lockfile
-- `src/bin/`: executable sources
-- `target/`: build artifacts (never edit manually)
+Key files:
+- `Cargo.toml` - package metadata/dependencies
+- `src/lib.rs` - shared module exports
+- `src/sql_parsing.rs` - shared byte-level parsing helpers
+- `src/bin/*.rs` - parser executables
 
 ## 2. Build/Lint/Test/Run Commands
-Run commands from repo root.
+Run from repository root.
 
+Build:
 ```bash
-# Build
 cargo build
 cargo build --release
 cargo build --bin page
 cargo build --bin pagelinks
+cargo build --bin linktarget
+```
 
-# Run
+Run:
+```bash
 cargo run --bin page
 cargo run --bin page -- /path/to/page.sql
+
 cargo run --bin pagelinks
 cargo run --bin pagelinks -- /path/to/pagelinks.sql 1000
 
-# Format
+cargo run --bin linktarget
+cargo run --bin linktarget -- /path/to/linktarget.sql 1000
+```
+
+Format and lint:
+```bash
 cargo fmt --all
 cargo fmt --all -- --check
-
-# Lint
 cargo clippy --all-targets --all-features
 cargo clippy --all-targets --all-features -- -D warnings
+```
 
-# Test (all)
+Tests (full and scoped):
+```bash
+# all tests
 cargo test
 
-# Test (per target)
+# library tests only
+cargo test --lib
+
+# per binary target
 cargo test --bin page
 cargo test --bin pagelinks
+cargo test --bin linktarget
+```
 
-# Test (single by name filter)
+Single-test workflows (preferred inner loop):
+```bash
+# name filter across all targets
 cargo test parse_row
 
-# Test (single in one target)
+# name filter inside one binary
 cargo test --bin pagelinks parse_row
+cargo test --bin linktarget parse_row
 
-# Test (single exact name)
-cargo test --bin pagelinks parse_row_handles_spaces -- --exact
+# exact single test
+cargo test --bin linktarget parse_row_handles_spaces -- --exact
+cargo test --lib parse_sql_quoted_bytes_handles_escapes -- --exact
 
-# Show test stdout
+# show test output
 cargo test -- --nocapture
 ```
 
-Notes:
-- There are currently no committed tests; add unit tests when changing parser behavior.
-- The single-test commands above are the preferred inner-loop workflow.
+## 3. Code Style Guidelines
 
-## 3. Coding Conventions
+Imports:
+- Order imports: `std`, third-party crates, local crate modules.
+- Keep imports explicit and minimal.
+- Remove unused imports; do not silence warnings.
 
-### 3.1 Imports
-- Order imports by source: std first, third-party second.
-- Keep imports minimal and remove unused imports.
-- Prefer selective imports (`use std::io::{BufRead, BufWriter, Write};`).
+Formatting:
+- Rustfmt is required; do not hand-format around it.
+- Keep files ASCII unless a file already requires Unicode.
+- Add comments only for non-obvious logic or invariants.
 
-### 3.2 Formatting
-- Run `cargo fmt --all` after edits.
-- Keep code ASCII unless the file already requires Unicode.
-- Use concise comments only for non-obvious logic.
-- Avoid large style-only rewrites in unrelated code.
+Types and parsing:
+- Use schema-aligned integer widths (`u32`, `u64`, `i32`).
+- Prefer checked arithmetic for untrusted numeric parsing.
+- Keep low-level parsing byte-oriented (`&[u8]`) in hot paths.
+- Use `Option` for primitive parse helpers where failure is expected.
+- Convert to `io::Result` at row/iterator boundaries with clear errors.
 
-### 3.3 Types and Parsing
-- Use explicit integer widths when constrained by schema (`u32`, `u64`, `i32`).
-- Use checked numeric operations for untrusted input.
-- Use `Option` in low-level token parsers when absence/failure is expected.
-- Convert parse failures to `io::Result` at boundary functions.
-- Return `Result` from `main`; avoid process abort patterns.
-
-### 3.4 Naming
+Naming conventions:
 - Files/modules/functions/locals: `snake_case`
-- Types/structs/enums/traits: `PascalCase`
+- Types/enums/traits: `PascalCase`
 - Constants: `UPPER_SNAKE_CASE`
-- Parser helper names should describe behavior (`parse_u64`, `skip_spaces`, `find_insert_start`).
+- Parser helper names should be specific and verb-based.
 
-### 3.5 Error Handling
-- Treat dump contents as untrusted and potentially malformed.
-- Do not panic on data-format errors.
-- Use `io::ErrorKind::InvalidData` for parse validation failures.
-- Error messages should include failed field/expectation context.
+Error handling:
+- Treat dump input as untrusted/malformed.
+- Avoid panics in parser paths.
+- Use `io::ErrorKind::InvalidData` for format/validation failures.
+- Include field/token context in error messages.
 
-### 3.6 I/O and Performance
-- Prefer streaming reads (`BufRead`, `read_until`) for large dump files.
-- Prefer buffered writes (`BufWriter`) for large output streams.
-- Keep hot parsing paths byte-oriented (`&[u8]`) where practical.
-- Minimize allocations and string conversions in tight loops.
+I/O and performance:
+- Use streaming reads (`BufRead`, `read_until`) for large dumps.
+- Use `BufWriter` for output.
+- Minimize allocations and UTF-8 conversions in tight loops.
+- Keep iterator output deterministic and stable.
 
-### 3.7 CLI Compatibility
-- Preserve current default arguments unless explicitly asked to change.
-- Keep output headers and column order stable for downstream tooling.
-- Keep output deterministic and script-friendly.
+CLI/output compatibility:
+- Preserve defaults unless explicitly requested to change.
+- Keep CSV headers and column order stable.
+- Keep output script-friendly and deterministic.
 
-## 4. Agent Validation Checklist
-For parser or CLI behavior changes, run:
+## 4. Testing Guidance for Parser Changes
+Prefer focused unit tests for:
+- whitespace around tuple fields
+- missing separators/parentheses
+- signed namespace edge cases
+- numeric overflow boundaries
+- SQL quoted string escapes (`\\`, `\'`, doubled `'`)
+- semicolon/end-of-line tuple termination
+- iterator behavior across multiple `INSERT` lines
+
+Recommended validation sequence before handoff:
 1. `cargo fmt --all -- --check`
-2. `cargo clippy --all-targets --all-features -- -D warnings`
-3. `cargo test` (or targeted single-test command during iteration)
-
-Recommended smoke check when local data is available:
-- `cargo run --bin pagelinks -- /path/to/pagelinks.sql 100`
+2. `cargo test` (or clearly state scoped tests run)
+3. `cargo clippy --all-targets --all-features -- -D warnings`
 
 ## 5. Cursor and Copilot Rules
-Checked for local rule files in:
+Checked locations:
 - `.cursor/rules/`
 - `.cursorrules`
 - `.github/copilot-instructions.md`
 
-Result:
-- No Cursor rules or Copilot instructions were found in this repository at generation time.
-- If added later, those files should be treated as higher-priority local instructions.
+Status for this repository at generation time:
+- No Cursor rule files found.
+- No Copilot instruction file found.
+
+If these files are added later, treat them as higher-priority local instructions.
 
 ## 6. Git and Workspace Hygiene
-- Do not edit generated build outputs in `target/`.
-- Do not commit large generated CSV artifacts unless explicitly requested.
-- Keep commits and changes scoped to requested behavior.
-- Avoid unrelated refactors while touching parser-critical code.
-
-## 7. Suggested Test Additions (When Modifying Parsers)
-- Numeric overflow and underflow handling
-- Leading/trailing whitespace around tuple fields
-- Missing separators/parentheses
-- Signed namespace parsing edge cases
-- End-of-line and semicolon termination behavior
-- Iterator behavior across multiple INSERT lines
+- Never edit generated files in `target/`.
+- Do not commit large generated dump outputs unless requested.
+- Keep changes tightly scoped to requested behavior.
+- Avoid unrelated refactors in parser-critical files.
+- In dirty worktrees, do not revert unrelated user changes.
