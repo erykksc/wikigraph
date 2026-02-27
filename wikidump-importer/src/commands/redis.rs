@@ -69,7 +69,8 @@ impl ProgressReporter {
         let mut err_out = BufWriter::new(stderr.lock());
         writeln!(
             err_out,
-            "progress {table}: scanned={scanned}, uploaded={uploaded}, skipped_namespace={skipped}, rows_per_sec={rows_per_sec:.0}",
+            "[{elapsed_secs:.1}s] progress {table}: scanned={scanned}, uploaded={uploaded}, skipped_namespace={skipped}, rows_per_sec={rows_per_sec:.0}",
+            elapsed_secs = elapsed_secs,
             table = self.table,
             scanned = stats.scanned,
             uploaded = stats.uploaded,
@@ -252,13 +253,19 @@ pub fn run_redis(args: RedisArgs) -> io::Result<()> {
         .query(&mut conn)
         .map_err(|err| io::Error::new(ErrorKind::ConnectionRefused, err.to_string()))?;
 
+    let started_at = Instant::now();
+
     {
         let stderr = io::stderr();
         let mut err_out = BufWriter::new(stderr.lock());
         writeln!(
             err_out,
-            "starting page import: input={}, namespace={}, batch_size={}, progress_every={}",
-            args.page, args.namespace, args.batch_size, args.progress_every
+            "[{:.1}s] starting page import: input={}, namespace={}, batch_size={}, progress_every={}",
+            started_at.elapsed().as_secs_f64(),
+            args.page,
+            args.namespace,
+            args.batch_size,
+            args.progress_every
         )?;
         err_out.flush()?;
     }
@@ -276,8 +283,12 @@ pub fn run_redis(args: RedisArgs) -> io::Result<()> {
         let mut err_out = BufWriter::new(stderr.lock());
         writeln!(
             err_out,
-            "starting pagelinks import: input={}, namespace={}, batch_size={}, progress_every={}",
-            args.pagelinks, args.namespace, args.batch_size, args.progress_every
+            "[{:.1}s] starting pagelinks import: input={}, namespace={}, batch_size={}, progress_every={}",
+            started_at.elapsed().as_secs_f64(),
+            args.pagelinks,
+            args.namespace,
+            args.batch_size,
+            args.progress_every
         )?;
         err_out.flush()?;
     }
@@ -295,8 +306,12 @@ pub fn run_redis(args: RedisArgs) -> io::Result<()> {
         let mut err_out = BufWriter::new(stderr.lock());
         writeln!(
             err_out,
-            "starting linktarget import: input={}, namespace={}, batch_size={}, progress_every={}",
-            args.linktarget, args.namespace, args.batch_size, args.progress_every
+            "[{:.1}s] starting linktarget import: input={}, namespace={}, batch_size={}, progress_every={}",
+            started_at.elapsed().as_secs_f64(),
+            args.linktarget,
+            args.namespace,
+            args.batch_size,
+            args.progress_every
         )?;
         err_out.flush()?;
     }
@@ -313,18 +328,27 @@ pub fn run_redis(args: RedisArgs) -> io::Result<()> {
     let mut err_out = BufWriter::new(stderr.lock());
     writeln!(
         err_out,
-        "uploaded page: scanned={}, uploaded={}, skipped_namespace={}",
-        page_stats.scanned, page_stats.uploaded, page_stats.skipped_namespace
+        "[{:.1}s] uploaded page: scanned={}, uploaded={}, skipped_namespace={}",
+        started_at.elapsed().as_secs_f64(),
+        page_stats.scanned,
+        page_stats.uploaded,
+        page_stats.skipped_namespace
     )?;
     writeln!(
         err_out,
-        "uploaded pagelinks: scanned={}, uploaded={}, skipped_namespace={}",
-        pagelinks_stats.scanned, pagelinks_stats.uploaded, pagelinks_stats.skipped_namespace
+        "[{:.1}s] uploaded pagelinks: scanned={}, uploaded={}, skipped_namespace={}",
+        started_at.elapsed().as_secs_f64(),
+        pagelinks_stats.scanned,
+        pagelinks_stats.uploaded,
+        pagelinks_stats.skipped_namespace
     )?;
     writeln!(
         err_out,
-        "uploaded linktarget: scanned={}, uploaded={}, skipped_namespace={}",
-        linktarget_stats.scanned, linktarget_stats.uploaded, linktarget_stats.skipped_namespace
+        "[{:.1}s] uploaded linktarget: scanned={}, uploaded={}, skipped_namespace={}",
+        started_at.elapsed().as_secs_f64(),
+        linktarget_stats.scanned,
+        linktarget_stats.uploaded,
+        linktarget_stats.skipped_namespace
     )?;
     err_out.flush()
 }
