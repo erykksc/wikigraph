@@ -2,28 +2,27 @@ import { fetch } from "undici";
 
 const WIKI_API = "https://en.wikipedia.org/w/api.php";
 
-type NormalizedPage = {
-  pageid: number;
-  title: string;
-};
-
 type WikiPage = {
-  pageid?: number;
-  title?: string;
-  missing?: string;
+  pageid: number;
+  ns: number;
+  title: string;
   links?: Array<{ title: string }>;
 };
 
 type WikiResponse = {
-  query?: {
-    normalized?: Array<{ from: string; to: string }>;
-    pages?: Record<string, WikiPage>;
-    backlinks?: Array<{ title: string }>;
+  continue?: {
+    plcontinue: string;
   };
-  continue?: Record<string, string>;
+  query: {
+    normalized?: Array<{ from: string; to: string }>;
+    pages: Record<string, WikiPage>;
+  };
 };
 
-const buildUrl = (params: Record<string, string>): string => {
+const fetchJson = async (
+  params: Record<string, string>,
+): Promise<WikiResponse> => {
+  // build URL
   const url = new URL(WIKI_API);
   url.search = new URLSearchParams({
     format: "json",
@@ -31,78 +30,109 @@ const buildUrl = (params: Record<string, string>): string => {
     origin: "*",
     ...params,
   }).toString();
-  return url.toString();
-};
 
-const fetchJson = async (
-  params: Record<string, string>,
-): Promise<WikiResponse> => {
-  const res = await fetch(buildUrl(params));
+  const res = await fetch(url.toString());
   if (!res.ok) {
     throw new Error(`Wikipedia API error: ${res.status}`);
   }
-  return (await res.json()) as WikiResponse;
+  return (await res.json()) as any;
 };
 
-export const resolveTitle = async (title: string): Promise<NormalizedPage> => {
-  const data = await fetchJson({
-    action: "query",
-    titles: title,
-  });
-
-  const pages = data.query?.pages ?? {};
-  const firstPage = Object.values(pages)[0];
-  if (!firstPage?.pageid || !firstPage.title || firstPage.missing) {
-    throw new Error("Article not found");
-  }
-
-  return { pageid: firstPage.pageid, title: firstPage.title };
+type OutLink = {
+  srcTitle: string;
+  targetTitle: string;
 };
 
-const collectTitles = async (
-  baseParams: Record<string, string>,
-): Promise<string[]> => {
-  let titles: string[] = [];
-  let cont: Record<string, string> | undefined;
-
-  do {
-    const params = cont ? { ...baseParams, ...cont } : baseParams;
-    const data = await fetchJson(params);
-
-    let items: Array<{ title: string }> = [];
-    if (baseParams.prop === "links") {
-      const pages = data.query?.pages ?? {};
-      for (const pageId in pages) {
-        const page = pages[pageId];
-        if (page.links) {
-          items = items.concat(page.links);
-        }
-      }
-    } else {
-      items = data.query?.backlinks ?? [];
-    }
-
-    titles = titles.concat(items.map((item) => item.title));
-    cont = data.continue;
-  } while (cont);
-
-  return titles;
+type QueryOutlinksResponse = {
+  plcontinue: string | undefined;
+  outLinks: Array<OutLink>;
+  normalized: Record<string, string>; // Record<from, to>
 };
 
-export const fetchOutlinks = async (title: string): Promise<string[]> =>
-  collectTitles({
+// This function queries links one time, but the response may return
+// 'plcontinue' tag, which would mean that we need to query again
+export const queryOutlinks = async (
+  titles: string[],
+  plcontinue?: string,
+): Promise<QueryOutlinksResponse> => {
+  let query: Record<string, string> = {
     action: "query",
     prop: "links",
-    titles: title,
+    titles: titles.join("|"),
     pllimit: "max",
     plnamespace: "0",
-  });
+  };
+  if (plcontinue) {
+    query["plcontinue"] = plcontinue;
+  }
+  const res = (await fetchJson(query)) as WikiResponse;
+  if (!res.query || !res.query.pages) {
+    console.error("Wrong wikipedia api response", res);
+    throw Error("Wrong wikipedia api response");
+  }
 
-export const fetchInlinks = async (title: string): Promise<string[]> =>
-  collectTitles({
+  const normalized: Record<string, string> = {};
+  for (const normalization of Object.values(res.query.normalized || [])) {
+    normalized[normalization.from] = normalization.to;
+  }
+
+  const outLinks: Array<OutLink> = [];
+  for (const wikipage of Object.values(res.query.pages)) {
+    if (!wikipage.links) {
+      continue;
+    }
+    for (const link of wikipage.links) {
+      outLinks.push({
+        srcTitle: wikipage.title,
+        targetTitle: link.title,
+      });
+    }
+  }
+
+  return {
+    plcontinue: res.continue?.plcontinue,
+    outLinks,
+    normalized,
+  };
+};
+
+export const wikiQueryLinksFully = async (
+  titles: string[],
+): Promise<QueryOutlinksResponse> => {
+  let { outLinks, normalized, plcontinue } = await queryOutlinks(titles);
+
+  while (plcontinue) {
+    let res = await queryOutlinks(titles, plcontinue);
+    outLinks.push(...res.outLinks);
+    for (const [from, to] of Object.entries(res.normalized)) {
+      normalized[from] = to;
+    }
+    plcontinue = res.plcontinue;
+  }
+
+  return {
+    outLinks,
+    normalized,
+    plcontinue: undefined,
+  };
+};
+
+export const resolveTitle = async (
+  title: string,
+): Promise<{ normalizedTitle: string; pageId: number }> => {
+  let query: Record<string, string> = {
     action: "query",
-    list: "backlinks",
-    bltitle: title,
-    bllimit: "max",
-    blnamespace: "0",
-  });
+    titles: title,
+  };
+  const res = (await fetchJson(query)) as WikiResponse;
+
+  const firstPage = res.query.pages[0];
+  if (firstPage) {
+    return {
+      pageId: firstPage.pageid,
+      normalizedTitle: firstPage.title,
+    };
+  } else {
+    throw new Error("Couldn't get the first page, api is broken");
+  }
+};
