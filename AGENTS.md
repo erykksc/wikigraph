@@ -136,13 +136,7 @@ Environment variables:
 - Client: Display errors to users via UI, log to console
 - Validate inputs with Zod schemas (server)
 
-### Graph Edge Handling
 
-- Use undirected edges with sorted node IDs: `[source, target].sort().join('->')`
-- This prevents duplicate edges when the server sends bidirectional edges (A→B and B→A)
-- Example: `const edgeId = `${[source, target].sort().join('->')}`
-
-### Formatting
 
 - Server: Use single quotes for strings
 - Client JSX: Use double quotes for attributes, single quotes elsewhere

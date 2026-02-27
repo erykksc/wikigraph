@@ -3,6 +3,7 @@ import Sigma from "sigma";
 import FA2 from "graphology-layout-forceatlas2/worker";
 import type { ForceAtlas2Settings } from "graphology-layout-forceatlas2";
 import type { ExpandResponse } from "@wikipedia-graph/shared";
+import { defaultLayoutSettings } from "./layout-config";
 
 const drawLabelWithBackground = (
   context: CanvasRenderingContext2D,
@@ -45,10 +46,16 @@ const drawLabelWithBackground = (
 
   const labelColor =
     "attribute" in settings.labelColor && settings.labelColor.attribute
-      ? (data as Record<string, string>)[settings.labelColor.attribute] ||
-        settings.labelColor.color ||
-        LABEL_COLOR_DEFAULT
-      : settings.labelColor.color;
+      ? (() => {
+          const value = (data as unknown as Record<string, unknown>)[
+            settings.labelColor.attribute
+          ];
+          if (typeof value === "string") {
+            return value;
+          }
+          return settings.labelColor.color ?? LABEL_COLOR_DEFAULT;
+        })()
+      : settings.labelColor.color ?? LABEL_COLOR_DEFAULT;
 
   context.fillStyle = data.labelColor ?? labelColor;
   context.fillText(data.label, x, data.y + labelSize / 3);
@@ -70,6 +77,9 @@ type GraphEdgeAttributes = {
 type GraphControllerOptions = {
   container: HTMLElement;
   onExpand: (title: string) => Promise<ExpandResponse>;
+  initialLayoutSettings?: ForceAtlas2Settings;
+  onNodeCountChange?: (count: number) => void;
+  onEdgeCountChange?: (count: number) => void;
 };
 
 const NODE_COLOR = "#56ccf2";
@@ -94,6 +104,8 @@ export class GraphController {
   private layout: FA2;
   private layoutSettings: ForceAtlas2Settings;
   private onExpand: (title: string) => Promise<ExpandResponse>;
+  private onNodeCountChange?: (count: number) => void;
+  private onEdgeCountChange?: (count: number) => void;
   private hoveredNode: string | null = null;
   private hoveredNeighbors: Set<string> | null = null;
 
@@ -108,17 +120,23 @@ export class GraphController {
       labelRenderer: drawLabelWithBackground,
     });
     this.layoutSettings = {
-      adjustSizes: true,
-      outboundAttractionDistribution: true,
-      slowDown: 100,
-      gravity: 0,
+      ...defaultLayoutSettings,
+      ...options.initialLayoutSettings,
     };
     this.layout = new FA2(this.graph, {
       settings: this.layoutSettings,
     });
     this.onExpand = options.onExpand;
+    this.onNodeCountChange = options.onNodeCountChange;
+    this.onEdgeCountChange = options.onEdgeCountChange;
     this.layout.start();
 
+    this.setupNodeReducer();
+    this.setupEdgeReducer();
+    this.setupEventHandlers();
+  }
+
+  private setupNodeReducer() {
     this.sigma.setSetting("nodeReducer", (node, data) => {
       if (!this.hoveredNode) {
         return data;
@@ -157,7 +175,9 @@ export class GraphController {
         zIndex: 0,
       };
     });
+  }
 
+  private setupEdgeReducer() {
     this.sigma.setSetting("edgeReducer", (edge, data) => {
       if (!this.hoveredNode) {
         return data;
@@ -181,7 +201,9 @@ export class GraphController {
         hidden: true,
       };
     });
+  }
 
+  private setupEventHandlers() {
     this.sigma.on("clickNode", async ({ node }) => {
       const attrs = this.graph.getNodeAttributes(node);
       if (attrs.expanded) return;
@@ -218,16 +240,9 @@ export class GraphController {
     this.sigma.getCamera().animatedReset({ duration: 600 });
   }
 
-  getNodeCount(): number {
-    return this.graph.order;
-  }
-
-  getEdgeCount(): number {
-    return this.graph.size;
-  }
-
   reset() {
     this.graph.clear();
+    this.notifyCounts();
   }
 
   updateLayoutSettings(settings: ForceAtlas2Settings) {
@@ -239,6 +254,11 @@ export class GraphController {
 
   getLayoutSettings(): ForceAtlas2Settings {
     return { ...this.layoutSettings };
+  }
+
+  private notifyCounts() {
+    this.onNodeCountChange?.(this.graph.order);
+    this.onEdgeCountChange?.(this.graph.size);
   }
 
   async seed(title: string) {
@@ -296,9 +316,7 @@ export class GraphController {
     isSeed: boolean,
     centerNodeId?: string,
   ) {
-    const newNodes = isSeed
-      ? payload.newNodes
-      : [payload.newNodes[0], ...payload.newNodes.slice(1)];
+    const newNodes = payload.newNodes;
     const centerId = centerNodeId ?? payload.newNodes[0];
 
     const newlyAddedNodes = new Set<string>();
@@ -339,5 +357,6 @@ export class GraphController {
     });
 
     this.updateNodeSize(centerId);
+    this.notifyCounts();
   }
 }

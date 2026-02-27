@@ -1,35 +1,29 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { ForceAtlas2Settings } from "graphology-layout-forceatlas2";
 import { expandTitle } from "./api";
 import { GraphController } from "./graph";
+import { layoutControls, defaultLayoutSettings } from "./layout-config";
 
 function App() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const graphRef = useRef<GraphController | null>(null);
+  const hasAppliedInitialLayoutRef = useRef(false);
   const [seed, setSeed] = useState("Graph theory");
   const [status, setStatus] = useState("Awaiting seed");
-  const [hasGraph, setHasGraph] = useState(false);
-  const [layoutSettings, setLayoutSettings] = useState<ForceAtlas2Settings>({
-    adjustSizes: true,
-    barnesHutOptimize: false,
-    barnesHutTheta: 0.5,
-    edgeWeightInfluence: 1,
-    gravity: 1,
-    linLogMode: true,
-    outboundAttractionDistribution: false,
-    scalingRatio: 8,
-    slowDown: 1.0,
-    strongGravityMode: false,
-  });
+  const [layoutSettings, setLayoutSettings] =
+    useState<ForceAtlas2Settings>(defaultLayoutSettings);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nodeCount, setNodeCount] = useState(0);
   const [edgeCount, setEdgeCount] = useState(0);
 
+  const hasGraph = nodeCount > 0;
+
   useEffect(() => {
     if (!containerRef.current) return;
     graphRef.current = new GraphController({
       container: containerRef.current,
+      initialLayoutSettings: layoutSettings,
       onExpand: async (title) => {
         setIsLoading(true);
         setError(null);
@@ -48,6 +42,8 @@ function App() {
           setIsLoading(false);
         }
       },
+      onNodeCountChange: setNodeCount,
+      onEdgeCountChange: setEdgeCount,
     });
 
     return () => {
@@ -58,115 +54,32 @@ function App() {
 
   useEffect(() => {
     if (!graphRef.current) return;
+    if (!hasAppliedInitialLayoutRef.current) {
+      hasAppliedInitialLayoutRef.current = true;
+      return;
+    }
     graphRef.current.updateLayoutSettings(layoutSettings);
   }, [layoutSettings]);
-
-  useEffect(() => {
-    if (!graphRef.current) return;
-    const interval = setInterval(() => {
-      setNodeCount(graphRef.current?.getNodeCount() ?? 0);
-      setEdgeCount(graphRef.current?.getEdgeCount() ?? 0);
-    }, 500);
-    return () => clearInterval(interval);
-  }, []);
-
-  const settingControls = useMemo(
-    () => [
-      {
-        key: "adjustSizes" as const,
-        label: "Adjust Sizes",
-        type: "boolean" as const,
-        description: "Account for node sizes in layout forces.",
-      },
-      {
-        key: "barnesHutOptimize" as const,
-        label: "Barnes-Hut Optimize",
-        type: "boolean" as const,
-        description:
-          "Use Barnes-Hut approximation for faster repulsion (O(n log n)).",
-      },
-      {
-        key: "barnesHutTheta" as const,
-        label: "Barnes-Hut Theta",
-        type: "number" as const,
-        min: 0.1,
-        max: 1.2,
-        step: 0.05,
-        description: "Barnes-Hut accuracy parameter (lower is more accurate).",
-      },
-      {
-        key: "edgeWeightInfluence" as const,
-        label: "Edge Weight Influence",
-        type: "number" as const,
-        min: 0,
-        max: 3,
-        step: 0.1,
-        description: "How much edge weights affect attraction strength.",
-      },
-      {
-        key: "gravity" as const,
-        label: "Gravity",
-        type: "number" as const,
-        min: 0,
-        max: 5,
-        step: 0.1,
-        description: "Pulls nodes toward the center of the layout.",
-      },
-      {
-        key: "linLogMode" as const,
-        label: "LinLog Mode",
-        type: "boolean" as const,
-        description: "Use LinLog energy model for clustering.",
-      },
-      {
-        key: "outboundAttractionDistribution" as const,
-        label: "Outbound Attraction",
-        type: "boolean" as const,
-        description: "Distribute attraction along outbound edges.",
-      },
-      {
-        key: "scalingRatio" as const,
-        label: "Scaling Ratio",
-        type: "number" as const,
-        min: 0.1,
-        max: 8,
-        step: 0.1,
-        description: "Strength of repulsion between nodes.",
-      },
-      {
-        key: "slowDown" as const,
-        label: "Slow Down",
-        type: "number" as const,
-        min: 0.1,
-        max: 10,
-        step: 0.1,
-        description: "Dampens movement for more stable layouts.",
-      },
-      {
-        key: "strongGravityMode" as const,
-        label: "Strong Gravity",
-        type: "boolean" as const,
-        description: "Use a stronger gravity model to keep clusters tighter.",
-      },
-    ],
-    [],
-  );
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!graphRef.current || !seed.trim()) return;
-    setIsLoading(true);
     setError(null);
     try {
       await graphRef.current.seed(seed.trim());
-      setHasGraph(true);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to load seed";
       setError(message);
-    } finally {
-      setIsLoading(false);
     }
+  };
+
+  const handleReset = () => {
+    graphRef.current?.reset();
+    setStatus("Awaiting seed");
+    setError(null);
+    setNodeCount(0);
+    setEdgeCount(0);
   };
 
   return (
@@ -195,12 +108,7 @@ function App() {
           </button>
           <button
             type="button"
-            onClick={() => {
-              graphRef.current?.reset();
-              setHasGraph(false);
-              setStatus("Awaiting seed");
-              setError(null);
-            }}
+            onClick={handleReset}
             disabled={!hasGraph}
           >
             Reset
@@ -218,7 +126,7 @@ function App() {
         </div>
         <aside className="controls-panel">
           <div className="controls-panel__title">Layout Controls</div>
-          {settingControls.map((control) => {
+          {layoutControls.map((control) => {
             if (control.type === "boolean") {
               const checked = Boolean(layoutSettings[control.key]);
               return (
