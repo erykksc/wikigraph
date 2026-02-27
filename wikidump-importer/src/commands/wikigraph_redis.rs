@@ -12,7 +12,7 @@ use crate::parsers::page;
 use crate::parsers::pagelinks;
 
 #[derive(Debug, Args)]
-pub struct WikigraphValkeyArgs {
+pub struct WikigraphRedisArgs {
     #[arg(long, default_value = "page.sql")]
     page: String,
     #[arg(long, default_value = "pagelinks.sql")]
@@ -22,7 +22,7 @@ pub struct WikigraphValkeyArgs {
     #[arg(long, default_value_t = 0)]
     namespace: i32,
     #[arg(long)]
-    valkey_url: Option<String>,
+    redis_url: Option<String>,
     #[arg(long, default_value_t = 1000)]
     batch_size: usize,
     #[arg(long, default_value_t = 100_000)]
@@ -89,11 +89,8 @@ impl ProgressReporter {
     }
 }
 
-fn resolve_valkey_url(args_url: Option<String>) -> String {
+fn resolve_redis_url(args_url: Option<String>) -> String {
     if let Some(url) = args_url {
-        return url;
-    }
-    if let Ok(url) = std::env::var("VALKEY_URL") {
         return url;
     }
     if let Ok(url) = std::env::var("REDIS_URL") {
@@ -109,7 +106,7 @@ fn flush_pipeline(pipe: &mut redis::Pipeline, conn: &mut redis::Connection) -> i
     Ok(())
 }
 
-fn upload_page_to_valkey(
+fn upload_page_to_redis(
     conn: &mut redis::Connection,
     input_path: &str,
     namespace_filter: i32,
@@ -153,7 +150,7 @@ fn upload_page_to_valkey(
     Ok(stats)
 }
 
-fn upload_pagelinks_to_valkey(
+fn upload_pagelinks_to_redis(
     conn: &mut redis::Connection,
     input_path: &str,
     namespace_filter: i32,
@@ -196,7 +193,7 @@ fn upload_pagelinks_to_valkey(
     Ok(stats)
 }
 
-fn upload_linktarget_to_valkey(
+fn upload_linktarget_to_redis(
     conn: &mut redis::Connection,
     input_path: &str,
     namespace_filter: i32,
@@ -245,7 +242,7 @@ fn upload_linktarget_to_valkey(
     Ok(stats)
 }
 
-pub fn run_wikigraph_valkey(args: WikigraphValkeyArgs) -> io::Result<()> {
+pub fn run_wikigraph_redis(args: WikigraphRedisArgs) -> io::Result<()> {
     if args.batch_size == 0 {
         return Err(io::Error::new(
             ErrorKind::InvalidInput,
@@ -253,8 +250,8 @@ pub fn run_wikigraph_valkey(args: WikigraphValkeyArgs) -> io::Result<()> {
         ));
     }
 
-    let valkey_url = resolve_valkey_url(args.valkey_url);
-    let client = redis::Client::open(valkey_url.as_str())
+    let redis_url = resolve_redis_url(args.redis_url);
+    let client = redis::Client::open(redis_url.as_str())
         .map_err(|err| io::Error::new(ErrorKind::InvalidInput, err.to_string()))?;
     let mut conn = client
         .get_connection()
@@ -275,7 +272,7 @@ pub fn run_wikigraph_valkey(args: WikigraphValkeyArgs) -> io::Result<()> {
         err_out.flush()?;
     }
 
-    let page_stats = upload_page_to_valkey(
+    let page_stats = upload_page_to_redis(
         &mut conn,
         &args.page,
         args.namespace,
@@ -294,7 +291,7 @@ pub fn run_wikigraph_valkey(args: WikigraphValkeyArgs) -> io::Result<()> {
         err_out.flush()?;
     }
 
-    let pagelinks_stats = upload_pagelinks_to_valkey(
+    let pagelinks_stats = upload_pagelinks_to_redis(
         &mut conn,
         &args.pagelinks,
         args.namespace,
@@ -313,7 +310,7 @@ pub fn run_wikigraph_valkey(args: WikigraphValkeyArgs) -> io::Result<()> {
         err_out.flush()?;
     }
 
-    let linktarget_stats = upload_linktarget_to_valkey(
+    let linktarget_stats = upload_linktarget_to_redis(
         &mut conn,
         &args.linktarget,
         args.namespace,

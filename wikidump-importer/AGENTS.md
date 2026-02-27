@@ -7,7 +7,7 @@ Guide for agentic coding tools operating in this repository.
 - Edition: 2024
 - Crate: `wikidump_importer`
 - Type: single Cargo package with binaries in `src/bin/`
-- Purpose: parse Wikipedia SQL dumps into CSV outputs and upload selected data to Valkey
+- Purpose: parse Wikipedia SQL dumps into CSV outputs and upload selected data to Redis
 
 Current binaries:
 - `page` (`src/bin/page.rs`)
@@ -17,7 +17,7 @@ Current binaries:
 Key files:
 - `Cargo.toml` - package metadata/dependencies
 - `src/lib.rs` - shared module exports
-- `src/main.rs` - clap CLI with `export-csv` and `wikigraph-valkey` subcommands
+- `src/main.rs` - clap CLI with `export-csv` and `wikigraph-redis` subcommands
 - `src/sql_parsing.rs` - shared byte-level parsing helpers
 - `src/bin/*.rs` - parser executables
 
@@ -46,10 +46,10 @@ cargo run --bin linktarget -- /path/to/linktarget.sql 1000
 
 # Unified CLI (current entrypoint)
 cargo run -- export-csv --table page --input /path/to/page.sql
-cargo run -- wikigraph-valkey --page /path/to/page.sql --pagelinks /path/to/pagelinks.sql --linktarget /path/to/linktarget.sql
+cargo run -- wikigraph-redis --page /path/to/page.sql --pagelinks /path/to/pagelinks.sql --linktarget /path/to/linktarget.sql
 
 # Optimized release run
-cargo run --release -- wikigraph-valkey --page ~/wikipedia/page.sql --pagelinks ~/wikipedia/pagelinks.sql --linktarget ~/wikipedia/linktarget.sql --namespace 0 --batch-size 1000
+cargo run --release -- wikigraph-redis --page ~/wikipedia/page.sql --pagelinks ~/wikipedia/pagelinks.sql --linktarget ~/wikipedia/linktarget.sql --namespace 0 --batch-size 1000
 ```
 
 Format and lint:
@@ -167,10 +167,10 @@ If these files are added later, treat them as higher-priority local instructions
 - Avoid unrelated refactors in parser-critical files.
 - In dirty worktrees, do not revert unrelated user changes.
 
-## 7. Valkey Upload Command and Database Shape
+## 7. Redis Upload Command and Database Shape
 
 New subcommand:
-- `wikigraph-valkey`
+- `wikigraph-redis`
 
 Arguments:
 - `--page` (default: `page.sql`)
@@ -178,14 +178,14 @@ Arguments:
 - `--linktarget` (default: `linktarget.sql`)
 - `--namespace` (default: `0`) - applied to all three tables
 - `--batch-size` (default: `1000`) - number of write commands sent per pipeline flush
-- `--valkey-url` (optional) - if omitted, resolve in order: `VALKEY_URL`, `REDIS_URL`, then `redis://127.0.0.1:6379/`
+- `--redis-url` (optional) - if omitted, resolve from `REDIS_URL`, then `redis://127.0.0.1:6379/`
 
 Filtering behavior:
 - `page`: include rows where `page_namespace == --namespace`
 - `pagelinks`: include rows where `pl_from_namespace == --namespace`
 - `linktarget`: include rows where `lt_namespace == --namespace`
 
-Resulting Valkey keyspace (decimal IDs, with prefixes):
+Resulting Redis keyspace (decimal IDs, with prefixes):
 - `page:<page_title>` -> string value `<page_id>`
 - `pagelinks:<from_page_id>` -> set of members `<linktarget_id>`
 - `linktarget:<linktarget_id>` -> string value `<target_title>`
@@ -198,7 +198,7 @@ Operational notes for users:
 
 Recommended usage example:
 ```bash
-cargo run --release -- wikigraph-valkey \
+cargo run --release -- wikigraph-redis \
   --page ~/wikipedia/page.sql \
   --pagelinks ~/wikipedia/pagelinks.sql \
   --linktarget ~/wikipedia/linktarget.sql \
