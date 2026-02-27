@@ -1,19 +1,19 @@
 use std::fs::File;
 use std::io::{self, BufRead, BufReader, BufWriter, Write};
 use wikidump_importer::sql_parsing::{
-    find_insert_values_start, parse_i32, parse_u32, parse_u64, skip_spaces,
+    find_insert_values_start, parse_i32, parse_sql_quoted_bytes, parse_u64, skip_spaces,
 };
 
-const INSERT_PREFIX: &[u8] = b"INSERT INTO `pagelinks` VALUES ";
+const INSERT_PREFIX: &[u8] = b"INSERT INTO `linktarget` VALUES ";
 
-#[derive(Debug, Clone, Copy)]
-struct PageLinkRow {
-    from_id: u32,
-    target_id: u64,
-    from_namespace: i32,
+#[derive(Debug, Clone)]
+struct LinkTargetRow {
+    id: u64,
+    namespace: i32,
+    title: Vec<u8>,
 }
 
-fn parse_row(values: &[u8], mut i: usize) -> io::Result<(PageLinkRow, usize)> {
+fn parse_row(values: &[u8], mut i: usize) -> io::Result<(LinkTargetRow, usize)> {
     i = skip_spaces(values, i);
     if i >= values.len() || values[i] != b'(' {
         return Err(io::Error::new(
@@ -23,37 +23,37 @@ fn parse_row(values: &[u8], mut i: usize) -> io::Result<(PageLinkRow, usize)> {
     }
     i += 1;
 
-    // Field 1: pl_from (INT UNSIGNED)
-    let (from_id, j1) = parse_u32(values, i)
-        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "failed to parse pl_from"))?;
+    // Field 1: lt_id (BIGINT UNSIGNED)
+    let (id, j1) = parse_u64(values, i)
+        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "failed to parse lt_id"))?;
     i = skip_spaces(values, j1);
     if i >= values.len() || values[i] != b',' {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
-            "expected comma after pl_from",
+            "expected comma after lt_id",
         ));
     }
     i += 1;
 
-    // Field 2: pl_from_namespace (INT)
-    let (from_namespace, j2) = parse_i32(values, i).ok_or_else(|| {
-        io::Error::new(
-            io::ErrorKind::InvalidData,
-            "failed to parse pl_from_namespace",
-        )
+    // Field 2: lt_namespace (INT)
+    let (namespace, j2) = parse_i32(values, i).ok_or_else(|| {
+        io::Error::new(io::ErrorKind::InvalidData, "failed to parse lt_namespace")
     })?;
     i = skip_spaces(values, j2);
     if i >= values.len() || values[i] != b',' {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
-            "expected comma after pl_from_namespace",
+            "expected comma after lt_namespace",
         ));
     }
     i += 1;
 
-    // Field 3: pl_target_id (BIGINT UNSIGNED)
-    let (target_id, j3) = parse_u64(values, i).ok_or_else(|| {
-        io::Error::new(io::ErrorKind::InvalidData, "failed to parse pl_target_id")
+    // Field 3: lt_title (VARBINARY)
+    let (title, j3) = parse_sql_quoted_bytes(values, i).ok_or_else(|| {
+        io::Error::new(
+            io::ErrorKind::InvalidData,
+            "failed to parse lt_title as SQL string",
+        )
     })?;
     i = skip_spaces(values, j3);
     if i >= values.len() || values[i] != b')' {
@@ -65,23 +65,23 @@ fn parse_row(values: &[u8], mut i: usize) -> io::Result<(PageLinkRow, usize)> {
     i += 1;
 
     Ok((
-        PageLinkRow {
-            from_id,
-            target_id,
-            from_namespace,
+        LinkTargetRow {
+            id,
+            namespace,
+            title,
         },
         i,
     ))
 }
 
-struct PageLinksIter<R: BufRead> {
+struct LinkTargetIter<R: BufRead> {
     reader: R,
     line: Vec<u8>,
     values_start: Option<usize>,
     cursor: usize,
 }
 
-impl<R: BufRead> PageLinksIter<R> {
+impl<R: BufRead> LinkTargetIter<R> {
     fn new(reader: R) -> Self {
         Self {
             reader,
@@ -92,8 +92,8 @@ impl<R: BufRead> PageLinksIter<R> {
     }
 }
 
-impl<R: BufRead> Iterator for PageLinksIter<R> {
-    type Item = io::Result<PageLinkRow>;
+impl<R: BufRead> Iterator for LinkTargetIter<R> {
+    type Item = io::Result<LinkTargetRow>;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
@@ -137,10 +137,18 @@ impl<R: BufRead> Iterator for PageLinksIter<R> {
     }
 }
 
+fn csv_escape(value: &str) -> String {
+    if value.contains([',', '"', '\n', '\r']) {
+        format!("\"{}\"", value.replace('"', "\"\""))
+    } else {
+        value.to_string()
+    }
+}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let input_path = std::env::args()
         .nth(1)
-        .unwrap_or_else(|| "pagelinks.sql".to_string());
+        .unwrap_or_else(|| "linktarget.sql".to_string());
 
     let file = File::open(&input_path)?;
     let mut reader = BufReader::new(file);
@@ -151,17 +159,38 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .and_then(|v| v.parse::<usize>().ok())
         .unwrap_or(usize::MAX);
 
-    writeln!(out, "from_page_id,from_namespace,linktarget_id")?;
+    writeln!(out, "linktarget_id,target_namespace,target_title")?;
 
-    for row in PageLinksIter::new(&mut reader).take(row_limit) {
-        let PageLinkRow {
-            from_id,
-            from_namespace,
-            target_id,
+    for row in LinkTargetIter::new(&mut reader).take(row_limit) {
+        let LinkTargetRow {
+            id,
+            namespace,
+            title,
         } = row?;
-        writeln!(out, "{:08x},{},{:016x}", from_id, from_namespace, target_id)?;
+        let title_text = std::str::from_utf8(&title).map_err(|_| {
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                "lt_title is not valid UTF-8 after SQL unescape",
+            )
+        })?;
+        writeln!(out, "{:016x},{},{}", id, namespace, csv_escape(title_text))?;
     }
 
     out.flush()?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::parse_row;
+
+    #[test]
+    fn parse_row_handles_spaces() {
+        let input = b"  ( 115058193 , -2 , 'Call_of_Duty' ) ,";
+        let (row, i) = parse_row(input, 0).expect("must parse");
+        assert_eq!(row.id, 115058193);
+        assert_eq!(row.namespace, -2);
+        assert_eq!(&row.title, b"Call_of_Duty");
+        assert_eq!(input[i], b' ');
+    }
 }
