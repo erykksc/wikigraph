@@ -3,6 +3,11 @@ node = "latest"
 
 [env]
 REDIS_URL = "redis://localhost:6379"
+WIKIDUMP_PAGE_SQL = "/home/erykksc/wikipedia/enwiki-latest-page.sql"
+WIKIDUMP_PAGELINKS_SQL = "/home/erykksc/wikipedia/enwiki-latest-pagelinks.sql"
+WIKIDUMP_LINKTARGET_SQL = "/home/erykksc/wikipedia/enwiki-latest-linktarget.sql"
+WIKIDUMP_NAMESPACE = "0"
+WIKIDUMP_BATCH_SIZE = "1000"
 
 [tasks.keydb]
 description = "Run KeyDB in Docker (flash tiering, 1GB RAM cache)"
@@ -14,6 +19,18 @@ docker run --rm -it \
   eqalpha/keydb:latest \
   keydb-server /etc/keydb/keydb.conf \
     --storage-provider flash /data \
-    --maxmemory 1G \
+    --maxmemory 12G \
     --maxmemory-policy allkeys-lfu
+"""
+
+[tasks.redis-import]
+description = "Import wikidump tables into Redis"
+run = """
+cargo run --release --manifest-path wikidump-importer/Cargo.toml -- redis \
+  --page "$WIKIDUMP_PAGE_SQL" \
+  --pagelinks "$WIKIDUMP_PAGELINKS_SQL" \
+  --linktarget "$WIKIDUMP_LINKTARGET_SQL" \
+  --namespace "$WIKIDUMP_NAMESPACE" \
+  --batch-size "$WIKIDUMP_BATCH_SIZE" \
+  --redis-url "$REDIS_URL"
 """
