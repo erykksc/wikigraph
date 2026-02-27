@@ -12,7 +12,7 @@ use crate::parsers::page;
 use crate::parsers::pagelinks;
 
 #[derive(Debug, Args)]
-pub struct WikigraphRedisArgs {
+pub struct RedisArgs {
     #[arg(long, default_value = "page.sql")]
     page: String,
     #[arg(long, default_value = "pagelinks.sql")]
@@ -28,8 +28,6 @@ pub struct WikigraphRedisArgs {
     #[arg(long, default_value_t = 1000_000)]
     progress_every: usize,
 }
-
-pub type RedisArgs = WikigraphRedisArgs;
 
 #[derive(Debug, Default, Clone, Copy)]
 struct UploadStats {
@@ -235,7 +233,7 @@ fn upload_linktarget_to_redis(
     Ok(stats)
 }
 
-pub fn run_wikigraph_redis(args: WikigraphRedisArgs) -> io::Result<()> {
+pub fn run_redis(args: RedisArgs) -> io::Result<()> {
     if args.batch_size == 0 {
         return Err(io::Error::new(
             ErrorKind::InvalidInput,
@@ -329,10 +327,6 @@ pub fn run_wikigraph_redis(args: WikigraphRedisArgs) -> io::Result<()> {
         linktarget_stats.scanned, linktarget_stats.uploaded, linktarget_stats.skipped_namespace
     )?;
     err_out.flush()
-}
-
-pub fn run_redis(args: RedisArgs) -> io::Result<()> {
-    run_wikigraph_redis(args)
 }
 
 #[cfg(test)]

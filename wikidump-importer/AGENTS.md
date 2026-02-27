@@ -17,7 +17,7 @@ Current binaries:
 Key files:
 - `Cargo.toml` - package metadata/dependencies
 - `src/lib.rs` - shared module exports
-- `src/main.rs` - clap CLI with `export-csv` and `wikigraph-redis` subcommands
+- `src/main.rs` - clap CLI with `export-csv` and `redis` subcommands
 - `src/sql_parsing.rs` - shared byte-level parsing helpers
 - `src/bin/*.rs` - parser executables
 
@@ -46,10 +46,10 @@ cargo run --bin linktarget -- /path/to/linktarget.sql 1000
 
 # Unified CLI (current entrypoint)
 cargo run -- export-csv --table page --input /path/to/page.sql
-cargo run -- wikigraph-redis --page /path/to/page.sql --pagelinks /path/to/pagelinks.sql --linktarget /path/to/linktarget.sql
+cargo run -- redis --page /path/to/page.sql --pagelinks /path/to/pagelinks.sql --linktarget /path/to/linktarget.sql
 
 # Optimized release run
-cargo run --release -- wikigraph-redis --page ~/wikipedia/page.sql --pagelinks ~/wikipedia/pagelinks.sql --linktarget ~/wikipedia/linktarget.sql --namespace 0 --batch-size 1000
+cargo run --release -- redis --page ~/wikipedia/page.sql --pagelinks ~/wikipedia/pagelinks.sql --linktarget ~/wikipedia/linktarget.sql --namespace 0 --batch-size 1000
 ```
 
 Format and lint:
@@ -170,7 +170,7 @@ If these files are added later, treat them as higher-priority local instructions
 ## 7. Redis-Compatible Storage Upload Command and Database Shape
 
 New subcommand:
-- `wikigraph-redis`
+- `redis`
 
 Arguments:
 - `--page` (default: `page.sql`)
@@ -198,7 +198,7 @@ Operational notes for users:
 
 Recommended usage example:
 ```bash
-cargo run --release -- wikigraph-redis \
+cargo run --release -- redis \
   --page ~/wikipedia/page.sql \
   --pagelinks ~/wikipedia/pagelinks.sql \
   --linktarget ~/wikipedia/linktarget.sql \

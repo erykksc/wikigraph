@@ -3,7 +3,7 @@ use std::io;
 use clap::{Parser, Subcommand};
 
 pub mod export_csv;
-pub mod wikigraph_redis;
+pub mod redis;
 
 #[derive(Debug, Parser)]
 #[command(name = "wikidump_importer")]
@@ -17,7 +17,7 @@ pub struct Cli {
 pub enum Command {
     ExportCsv(export_csv::ExportCsvArgs),
     #[command(name = "redis")]
-    Redis(wikigraph_redis::RedisArgs),
+    Redis(redis::RedisArgs),
 }
 
 impl Cli {
@@ -30,7 +30,7 @@ impl Command {
     pub fn run(self) -> io::Result<()> {
         match self {
             Self::ExportCsv(args) => export_csv::run_export_csv(args),
-            Self::Redis(args) => wikigraph_redis::run_redis(args),
+            Self::Redis(args) => redis::run_redis(args),
         }
     }
 }
