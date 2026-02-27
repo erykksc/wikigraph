@@ -1,6 +1,7 @@
 use std::fs::File;
 use std::io::{self, BufReader, BufWriter, ErrorKind, Write};
 use std::str;
+use std::time::Instant;
 
 use clap::Args;
 use parse_mediawiki_sql::utils::memory_map;
@@ -24,6 +25,8 @@ pub struct WikigraphValkeyArgs {
     valkey_url: Option<String>,
     #[arg(long, default_value_t = 1000)]
     batch_size: usize,
+    #[arg(long, default_value_t = 100_000)]
+    progress_every: usize,
 }
 
 #[derive(Debug, Default, Clone, Copy)]
@@ -36,6 +39,55 @@ struct UploadStats {
 const PAGE_KEY_PREFIX: &str = "page:";
 const PAGELINKS_KEY_PREFIX: &str = "pagelinks:";
 const LINKTARGET_KEY_PREFIX: &str = "linktarget:";
+
+struct ProgressReporter {
+    table: &'static str,
+    every: usize,
+    next_scanned: usize,
+    started_at: Instant,
+}
+
+impl ProgressReporter {
+    fn new(table: &'static str, every: usize) -> Self {
+        Self {
+            table,
+            every,
+            next_scanned: every,
+            started_at: Instant::now(),
+        }
+    }
+
+    fn maybe_report(&mut self, stats: UploadStats) -> io::Result<()> {
+        if self.every == 0 || stats.scanned < self.next_scanned {
+            return Ok(());
+        }
+
+        let elapsed_secs = self.started_at.elapsed().as_secs_f64();
+        let rows_per_sec = if elapsed_secs > 0.0 {
+            stats.scanned as f64 / elapsed_secs
+        } else {
+            0.0
+        };
+
+        let stderr = io::stderr();
+        let mut err_out = BufWriter::new(stderr.lock());
+        writeln!(
+            err_out,
+            "progress {table}: scanned={scanned}, uploaded={uploaded}, skipped_namespace={skipped}, rows_per_sec={rows_per_sec:.0}",
+            table = self.table,
+            scanned = stats.scanned,
+            uploaded = stats.uploaded,
+            skipped = stats.skipped_namespace,
+        )?;
+        err_out.flush()?;
+
+        while self.next_scanned <= stats.scanned {
+            self.next_scanned = self.next_scanned.saturating_add(self.every);
+        }
+
+        Ok(())
+    }
+}
 
 fn resolve_valkey_url(args_url: Option<String>) -> String {
     if let Some(url) = args_url {
@@ -62,15 +114,18 @@ fn upload_page_to_valkey(
     input_path: &str,
     namespace_filter: i32,
     batch_size: usize,
+    progress_every: usize,
 ) -> io::Result<UploadStats> {
     let page_sql = unsafe { memory_map(input_path) }
         .map_err(|err| io::Error::new(ErrorKind::InvalidData, err.to_string()))?;
     let mut stats = UploadStats::default();
+    let mut progress = ProgressReporter::new("page", progress_every);
     let mut pipe = redis::pipe();
     let mut queued = 0usize;
 
     page::for_each_row(&page_sql, |row| {
         stats.scanned += 1;
+        progress.maybe_report(stats)?;
         if row.namespace != namespace_filter {
             stats.skipped_namespace += 1;
             return Ok(true);
@@ -103,16 +158,19 @@ fn upload_pagelinks_to_valkey(
     input_path: &str,
     namespace_filter: i32,
     batch_size: usize,
+    progress_every: usize,
 ) -> io::Result<UploadStats> {
     let file = File::open(input_path)?;
     let reader = BufReader::new(file);
     let mut stats = UploadStats::default();
+    let mut progress = ProgressReporter::new("pagelinks", progress_every);
     let mut pipe = redis::pipe();
     let mut queued = 0usize;
 
     for row in pagelinks::iter_rows(reader) {
         let row = row?;
         stats.scanned += 1;
+        progress.maybe_report(stats)?;
         if row.from_namespace != namespace_filter {
             stats.skipped_namespace += 1;
             continue;
@@ -143,16 +201,19 @@ fn upload_linktarget_to_valkey(
     input_path: &str,
     namespace_filter: i32,
     batch_size: usize,
+    progress_every: usize,
 ) -> io::Result<UploadStats> {
     let file = File::open(input_path)?;
     let reader = BufReader::new(file);
     let mut stats = UploadStats::default();
+    let mut progress = ProgressReporter::new("linktarget", progress_every);
     let mut pipe = redis::pipe();
     let mut queued = 0usize;
 
     for row in linktarget::iter_rows(reader) {
         let row = row?;
         stats.scanned += 1;
+        progress.maybe_report(stats)?;
         if row.namespace != namespace_filter {
             stats.skipped_namespace += 1;
             continue;
@@ -203,11 +264,62 @@ pub fn run_wikigraph_valkey(args: WikigraphValkeyArgs) -> io::Result<()> {
         .query(&mut conn)
         .map_err(|err| io::Error::new(ErrorKind::ConnectionRefused, err.to_string()))?;
 
-    let page_stats = upload_page_to_valkey(&mut conn, &args.page, args.namespace, args.batch_size)?;
-    let pagelinks_stats =
-        upload_pagelinks_to_valkey(&mut conn, &args.pagelinks, args.namespace, args.batch_size)?;
-    let linktarget_stats =
-        upload_linktarget_to_valkey(&mut conn, &args.linktarget, args.namespace, args.batch_size)?;
+    {
+        let stderr = io::stderr();
+        let mut err_out = BufWriter::new(stderr.lock());
+        writeln!(
+            err_out,
+            "starting page import: input={}, namespace={}, batch_size={}, progress_every={}",
+            args.page, args.namespace, args.batch_size, args.progress_every
+        )?;
+        err_out.flush()?;
+    }
+
+    let page_stats = upload_page_to_valkey(
+        &mut conn,
+        &args.page,
+        args.namespace,
+        args.batch_size,
+        args.progress_every,
+    )?;
+
+    {
+        let stderr = io::stderr();
+        let mut err_out = BufWriter::new(stderr.lock());
+        writeln!(
+            err_out,
+            "starting pagelinks import: input={}, namespace={}, batch_size={}, progress_every={}",
+            args.pagelinks, args.namespace, args.batch_size, args.progress_every
+        )?;
+        err_out.flush()?;
+    }
+
+    let pagelinks_stats = upload_pagelinks_to_valkey(
+        &mut conn,
+        &args.pagelinks,
+        args.namespace,
+        args.batch_size,
+        args.progress_every,
+    )?;
+
+    {
+        let stderr = io::stderr();
+        let mut err_out = BufWriter::new(stderr.lock());
+        writeln!(
+            err_out,
+            "starting linktarget import: input={}, namespace={}, batch_size={}, progress_every={}",
+            args.linktarget, args.namespace, args.batch_size, args.progress_every
+        )?;
+        err_out.flush()?;
+    }
+
+    let linktarget_stats = upload_linktarget_to_valkey(
+        &mut conn,
+        &args.linktarget,
+        args.namespace,
+        args.batch_size,
+        args.progress_every,
+    )?;
 
     let stderr = io::stderr();
     let mut err_out = BufWriter::new(stderr.lock());
