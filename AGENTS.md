@@ -15,7 +15,7 @@ Wikipedia Graph is a monorepo containing:
 ### Development
 
 ```bash
-# Run all packages concurrently (requires Redis/Valkey running)
+# Run all packages concurrently (requires Redis-compatible storage running)
 npm run dev
 
 # Run server only
@@ -72,16 +72,16 @@ npx vitest
 ### Infrastructure
 
 ```bash
-# Run Redis/Valkey via mise
-mise run valkey
+# Run Redis-compatible storage (KeyDB) via mise
+mise run keydb
 
 # Or manually:
-docker run --rm -it -p 6379:6379 --name valkey valkey/valkey:latest
+docker run --rm -it -p 6379:6379 --name keydb eqalpha/keydb:latest
 ```
 
 Environment variables:
 
-- `VALKEY_URL` or `REDIS_URL`: Redis connection string (default: `redis://localhost:6379`)
+- `REDIS_URL`: Redis-compatible storage connection string (default: `redis://localhost:6379`)
 - `PORT`: Server port (default: 3000)
 - `HOST`: Server host (default: `localhost`)
 - `VITE_API_BASE`: Client API base URL (default: `http://localhost:3000`)
@@ -164,7 +164,7 @@ Environment variables:
 2. Client calls `/expand` endpoint with the title
 3. Server fetches inlinks/outlinks from Wikipedia API
 4. Server returns `{ newNodes: string[], newEdges: {fromNode, targetNode}[] }`
-5. Server caches results in Redis (1 day TTL)
+5. Server caches results in Redis-compatible storage (1 day TTL)
 6. Client renders/updates graph with Sigma.js
 
 ### API Response Format
@@ -181,7 +181,7 @@ type ExpandResponse = {
 
 - `server/src/server.ts`: Fastify server setup and routes
 - `server/src/wiki.ts`: Wikipedia API integration (outlinks from pages[].links, inlinks from backlinks)
-- `server/src/cache.ts`: Redis caching layer
+- `server/src/cache.ts`: Redis-compatible caching layer
 - `client/src/App.tsx`: Main React component
 - `client/src/graph.ts`: Sigma.js graph controller - handles node/edge deduplication
 - `client/src/api.ts`: API client calling `/expand` endpoint

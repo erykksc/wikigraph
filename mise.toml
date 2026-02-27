@@ -2,8 +2,18 @@
 node = "latest"
 
 [env]
-VALKEY_URL = "redis://localhost:6379"
+REDIS_URL = "redis://localhost:6379"
 
-[tasks.valkey]
-description = "Run Valkey in Docker (ephemeral)"
-run = "docker run --rm -it -p 6379:6379 --name valkey valkey/valkey:latest"
+[tasks.keydb]
+description = "Run KeyDB in Docker (flash tiering, 1GB RAM cache)"
+run = """
+docker run --rm -it \
+  -p 6379:6379 \
+  -v $(pwd)/.keydb-data:/data \
+  --name keydb \
+  eqalpha/keydb:latest \
+  keydb-server /etc/keydb/keydb.conf \
+    --storage-provider flash /data \
+    --maxmemory 1G \
+    --maxmemory-policy allkeys-lfu
+"""

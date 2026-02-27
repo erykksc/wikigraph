@@ -2,7 +2,7 @@ import Redis from "ioredis";
 import type { ExpandResponse } from "@wikipedia-graph/shared";
 
 const redisUrl =
-  process.env.VALKEY_URL || process.env.REDIS_URL || "redis://localhost:6379";
+  process.env.REDIS_URL || "redis://localhost:6379";
 
 export const cache = new Redis(redisUrl);
 

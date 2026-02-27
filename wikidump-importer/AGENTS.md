@@ -7,7 +7,7 @@ Guide for agentic coding tools operating in this repository.
 - Edition: 2024
 - Crate: `wikidump_importer`
 - Type: single Cargo package with binaries in `src/bin/`
-- Purpose: parse Wikipedia SQL dumps into CSV outputs and upload selected data to Redis
+- Purpose: parse Wikipedia SQL dumps into CSV outputs and upload selected data to Redis-compatible storage
 
 Current binaries:
 - `page` (`src/bin/page.rs`)
@@ -167,7 +167,7 @@ If these files are added later, treat them as higher-priority local instructions
 - Avoid unrelated refactors in parser-critical files.
 - In dirty worktrees, do not revert unrelated user changes.
 
-## 7. Redis Upload Command and Database Shape
+## 7. Redis-Compatible Storage Upload Command and Database Shape
 
 New subcommand:
 - `wikigraph-redis`
@@ -185,7 +185,7 @@ Filtering behavior:
 - `pagelinks`: include rows where `pl_from_namespace == --namespace`
 - `linktarget`: include rows where `lt_namespace == --namespace`
 
-Resulting Redis keyspace (decimal IDs, with prefixes):
+Resulting Redis-compatible keyspace (decimal IDs, with prefixes):
 - `page:<page_title>` -> string value `<page_id>`
 - `pagelinks:<from_page_id>` -> set of members `<linktarget_id>`
 - `linktarget:<linktarget_id>` -> string value `<target_title>`
