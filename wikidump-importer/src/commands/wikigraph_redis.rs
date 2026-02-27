@@ -1,12 +1,12 @@
 use std::fs::File;
 use std::io::{self, BufReader, BufWriter, ErrorKind, Write};
-use std::str;
 use std::time::Instant;
 
 use clap::Args;
 use parse_mediawiki_sql::utils::memory_map;
 use redis::RedisResult;
 
+use crate::outputs::redis::{queue_linktarget_row, queue_page_row, queue_pagelinks_row};
 use crate::parsers::linktarget;
 use crate::parsers::page;
 use crate::parsers::pagelinks;
@@ -37,10 +37,6 @@ struct UploadStats {
     uploaded: usize,
     skipped_namespace: usize,
 }
-
-const PAGE_KEY_PREFIX: &str = "page:";
-const PAGELINKS_KEY_PREFIX: &str = "pagelinks:";
-const LINKTARGET_KEY_PREFIX: &str = "linktarget:";
 
 struct ProgressReporter {
     table: &'static str,
@@ -143,10 +139,7 @@ fn upload_page_to_redis(
             return Ok(true);
         }
 
-        pipe.cmd("SET")
-            .arg(format!("{}{}", PAGE_KEY_PREFIX, row.title))
-            .arg(row.id.to_string())
-            .ignore();
+        queue_page_row(&mut pipe, &row);
         queued += 1;
         let _reported = uploaded_row(&mut progress, &mut stats)?;
 
@@ -187,10 +180,7 @@ fn upload_pagelinks_to_redis(
             continue;
         }
 
-        pipe.cmd("SADD")
-            .arg(format!("{}{}", PAGELINKS_KEY_PREFIX, row.from_id))
-            .arg(row.target_id.to_string())
-            .ignore();
+        queue_pagelinks_row(&mut pipe, &row);
         queued += 1;
         let _reported = uploaded_row(&mut progress, &mut stats)?;
 
@@ -228,17 +218,7 @@ fn upload_linktarget_to_redis(
             let _reported = skip_row(&mut progress, &mut stats)?;
             continue;
         }
-        let title = str::from_utf8(&row.title).map_err(|_| {
-            io::Error::new(
-                ErrorKind::InvalidData,
-                "lt_title is not valid UTF-8 after SQL unescape",
-            )
-        })?;
-
-        pipe.cmd("SET")
-            .arg(format!("{}{}", LINKTARGET_KEY_PREFIX, row.id))
-            .arg(title)
-            .ignore();
+        queue_linktarget_row(&mut pipe, &row)?;
         queued += 1;
         let _reported = uploaded_row(&mut progress, &mut stats)?;
 
