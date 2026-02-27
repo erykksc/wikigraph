@@ -53,6 +53,22 @@ cd server && npx tsc --noEmit
 - Server: Consider adding Vitest or node:test
 - Client: Already has eslint-plugin-react-hooks for React testing
 
+If you add Vitest, example commands:
+
+```bash
+# Run all tests
+npm test
+
+# Run a single test file
+npx vitest run src/some-test.ts
+
+# Run tests matching a pattern
+npx vitest run -t "some test name"
+
+# Run tests in watch mode
+npx vitest
+```
+
 ### Infrastructure
 
 ```bash
@@ -67,7 +83,7 @@ Environment variables:
 
 - `VALKEY_URL` or `REDIS_URL`: Redis connection string (default: `redis://localhost:6379`)
 - `PORT`: Server port (default: 3000)
-- `HOST`: Server host (default: `0.0.0.0`)
+- `HOST`: Server host (default: `localhost`)
 - `VITE_API_BASE`: Client API base URL (default: `http://localhost:3000`)
 
 ## Code Style Guidelines
@@ -119,6 +135,12 @@ Environment variables:
 - Server: Return appropriate HTTP status codes (400, 404, 500)
 - Client: Display errors to users via UI, log to console
 - Validate inputs with Zod schemas (server)
+
+### Graph Edge Handling
+
+- Use undirected edges with sorted node IDs: `[source, target].sort().join('->')`
+- This prevents duplicate edges when the server sends bidirectional edges (A→B and B→A)
+- Example: `const edgeId = `${[source, target].sort().join('->')}`
 
 ### Formatting
 

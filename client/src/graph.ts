@@ -36,7 +36,8 @@ const drawLabelWithBackground = (
   const boxHeight = labelSize + paddingY * 2;
 
   if (data.labelBackground) {
-    context.fillStyle = data.labelBackgroundColor ?? "#ffffff";
+    context.fillStyle =
+      data.labelBackgroundColor ?? LABEL_BACKGROUND_HIGHLIGHTED_COLOR;
     context.beginPath();
     context.roundRect(x - paddingX, y, boxWidth, boxHeight, 6);
     context.fill();
@@ -46,7 +47,7 @@ const drawLabelWithBackground = (
     "attribute" in settings.labelColor && settings.labelColor.attribute
       ? (data as Record<string, string>)[settings.labelColor.attribute] ||
         settings.labelColor.color ||
-        "#000"
+        LABEL_COLOR_DEFAULT
       : settings.labelColor.color;
 
   context.fillStyle = data.labelColor ?? labelColor;
@@ -74,6 +75,13 @@ type GraphControllerOptions = {
 const NODE_COLOR = "#56ccf2";
 const EXPANDED_NODE_COLOR = "#56f28a";
 
+const LABEL_COLOR_DEFAULT = "#e6edf5";
+const LABEL_COLOR_HIGHLIGHTED = "#000000";
+const LABEL_BACKGROUND_HIGHLIGHTED_COLOR = "#ffffff";
+const EDGE_COLOR = "rgba(128, 140, 156, 0.4)";
+const EDGE_COLOR_HIGHLIGHTED = "rgba(255, 255, 255, 0.35)";
+const NODE_COLOR_DIMMED = "rgba(32, 46, 60, 0.9)";
+
 const BASE_NODE_SIZE = 4;
 const SIZE_SCALE = 1.4;
 
@@ -96,7 +104,7 @@ export class GraphController {
       labelGridCellSize: 80,
       labelRenderedSizeThreshold: 8,
       zIndex: true,
-      labelColor: { attribute: "labelColor", color: "#101826" },
+      labelColor: { attribute: "labelColor", color: LABEL_COLOR_DEFAULT },
       labelRenderer: drawLabelWithBackground,
     });
     this.layoutSettings = {
@@ -125,8 +133,8 @@ export class GraphController {
           color: NODE_COLOR,
           size: data.size * 1.2,
           labelBackground: true,
-          labelBackgroundColor: "#ffffff",
-          labelColor: "#101826",
+          labelBackgroundColor: LABEL_BACKGROUND_HIGHLIGHTED_COLOR,
+          labelColor: LABEL_COLOR_HIGHLIGHTED,
           zIndex: 1,
         };
       }
@@ -136,15 +144,15 @@ export class GraphController {
           ...data,
           color: NODE_COLOR,
           labelBackground: true,
-          labelBackgroundColor: "#ffffff",
-          labelColor: "#101826",
+          labelBackgroundColor: LABEL_BACKGROUND_HIGHLIGHTED_COLOR,
+          labelColor: LABEL_COLOR_HIGHLIGHTED,
           zIndex: 0.5,
         };
       }
 
       return {
         ...data,
-        color: "rgba(32, 46, 60, 0.9)",
+        color: NODE_COLOR_DIMMED,
         label: "",
         zIndex: 0,
       };
@@ -163,7 +171,7 @@ export class GraphController {
       if (isConnected) {
         return {
           ...data,
-          color: "rgba(255,255,255,0.35)",
+          color: EDGE_COLOR_HIGHLIGHTED,
           zIndex: 1,
         };
       }
@@ -273,7 +281,7 @@ export class GraphController {
       return;
     }
     this.graph.addEdgeWithKey(edgeId, source, target, {
-      color: "rgba(255,255,255,0.15)",
+      color: EDGE_COLOR,
     });
   }
 
