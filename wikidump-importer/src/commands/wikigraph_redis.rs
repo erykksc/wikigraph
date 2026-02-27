@@ -29,6 +29,8 @@ pub struct WikigraphRedisArgs {
     progress_every: usize,
 }
 
+pub type RedisArgs = WikigraphRedisArgs;
+
 #[derive(Debug, Default, Clone, Copy)]
 struct UploadStats {
     scanned: usize,
@@ -347,6 +349,10 @@ pub fn run_wikigraph_redis(args: WikigraphRedisArgs) -> io::Result<()> {
         linktarget_stats.scanned, linktarget_stats.uploaded, linktarget_stats.skipped_namespace
     )?;
     err_out.flush()
+}
+
+pub fn run_redis(args: RedisArgs) -> io::Result<()> {
+    run_wikigraph_redis(args)
 }
 
 #[cfg(test)]

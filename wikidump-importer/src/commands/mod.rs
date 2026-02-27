@@ -16,8 +16,8 @@ pub struct Cli {
 #[derive(Debug, Subcommand)]
 pub enum Command {
     ExportCsv(export_csv::ExportCsvArgs),
-    #[command(name = "wikigraph-redis")]
-    WikigraphRedis(wikigraph_redis::WikigraphRedisArgs),
+    #[command(name = "redis")]
+    Redis(wikigraph_redis::RedisArgs),
 }
 
 impl Cli {
@@ -30,7 +30,7 @@ impl Command {
     pub fn run(self) -> io::Result<()> {
         match self {
             Self::ExportCsv(args) => export_csv::run_export_csv(args),
-            Self::WikigraphRedis(args) => wikigraph_redis::run_wikigraph_redis(args),
+            Self::Redis(args) => wikigraph_redis::run_redis(args),
         }
     }
 }
