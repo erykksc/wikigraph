@@ -25,7 +25,7 @@ pub struct WikigraphRedisArgs {
     redis_url: Option<String>,
     #[arg(long, default_value_t = 1000)]
     batch_size: usize,
-    #[arg(long, default_value_t = 100_000)]
+    #[arg(long, default_value_t = 1000_000)]
     progress_every: usize,
 }
 
@@ -57,9 +57,9 @@ impl ProgressReporter {
         }
     }
 
-    fn maybe_report(&mut self, stats: UploadStats) -> io::Result<()> {
+    fn maybe_report(&mut self, stats: UploadStats) -> io::Result<bool> {
         if self.every == 0 || stats.scanned < self.next_scanned {
-            return Ok(());
+            return Ok(false);
         }
 
         let elapsed_secs = self.started_at.elapsed().as_secs_f64();
@@ -85,8 +85,22 @@ impl ProgressReporter {
             self.next_scanned = self.next_scanned.saturating_add(self.every);
         }
 
-        Ok(())
+        Ok(true)
     }
+}
+
+fn begin_row(stats: &mut UploadStats) {
+    stats.scanned += 1;
+}
+
+fn skip_row(progress: &mut ProgressReporter, stats: &mut UploadStats) -> io::Result<bool> {
+    stats.skipped_namespace += 1;
+    progress.maybe_report(*stats)
+}
+
+fn uploaded_row(progress: &mut ProgressReporter, stats: &mut UploadStats) -> io::Result<bool> {
+    stats.uploaded += 1;
+    progress.maybe_report(*stats)
 }
 
 fn resolve_redis_url(args_url: Option<String>) -> String {
@@ -121,10 +135,9 @@ fn upload_page_to_redis(
     let mut queued = 0usize;
 
     page::for_each_row(&page_sql, |row| {
-        stats.scanned += 1;
-        progress.maybe_report(stats)?;
+        begin_row(&mut stats);
         if row.namespace != namespace_filter {
-            stats.skipped_namespace += 1;
+            let _reported = skip_row(&mut progress, &mut stats)?;
             return Ok(true);
         }
 
@@ -133,7 +146,7 @@ fn upload_page_to_redis(
             .arg(row.id.to_string())
             .ignore();
         queued += 1;
-        stats.uploaded += 1;
+        let _reported = uploaded_row(&mut progress, &mut stats)?;
 
         if queued >= batch_size {
             flush_pipeline(&mut pipe, conn)?;
@@ -166,10 +179,9 @@ fn upload_pagelinks_to_redis(
 
     for row in pagelinks::iter_rows(reader) {
         let row = row?;
-        stats.scanned += 1;
-        progress.maybe_report(stats)?;
+        begin_row(&mut stats);
         if row.from_namespace != namespace_filter {
-            stats.skipped_namespace += 1;
+            let _reported = skip_row(&mut progress, &mut stats)?;
             continue;
         }
 
@@ -178,7 +190,7 @@ fn upload_pagelinks_to_redis(
             .arg(row.target_id.to_string())
             .ignore();
         queued += 1;
-        stats.uploaded += 1;
+        let _reported = uploaded_row(&mut progress, &mut stats)?;
 
         if queued >= batch_size {
             flush_pipeline(&mut pipe, conn)?;
@@ -209,10 +221,9 @@ fn upload_linktarget_to_redis(
 
     for row in linktarget::iter_rows(reader) {
         let row = row?;
-        stats.scanned += 1;
-        progress.maybe_report(stats)?;
+        begin_row(&mut stats);
         if row.namespace != namespace_filter {
-            stats.skipped_namespace += 1;
+            let _reported = skip_row(&mut progress, &mut stats)?;
             continue;
         }
         let title = str::from_utf8(&row.title).map_err(|_| {
@@ -227,7 +238,7 @@ fn upload_linktarget_to_redis(
             .arg(title)
             .ignore();
         queued += 1;
-        stats.uploaded += 1;
+        let _reported = uploaded_row(&mut progress, &mut stats)?;
 
         if queued >= batch_size {
             flush_pipeline(&mut pipe, conn)?;
@@ -336,4 +347,47 @@ pub fn run_wikigraph_redis(args: WikigraphRedisArgs) -> io::Result<()> {
         linktarget_stats.scanned, linktarget_stats.uploaded, linktarget_stats.skipped_namespace
     )?;
     err_out.flush()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn uploaded_row_reports_current_row_at_milestone() {
+        let mut stats = UploadStats::default();
+        let mut progress = ProgressReporter::new("pagelinks", 3);
+
+        begin_row(&mut stats);
+        let reported = uploaded_row(&mut progress, &mut stats).expect("reporting should succeed");
+        assert!(!reported);
+
+        begin_row(&mut stats);
+        let reported = uploaded_row(&mut progress, &mut stats).expect("reporting should succeed");
+        assert!(!reported);
+
+        begin_row(&mut stats);
+        let reported = uploaded_row(&mut progress, &mut stats).expect("reporting should succeed");
+        assert!(reported);
+        assert_eq!(stats.scanned, 3);
+        assert_eq!(stats.uploaded, 3);
+        assert_eq!(stats.skipped_namespace, 0);
+    }
+
+    #[test]
+    fn skipped_row_reports_current_row_at_milestone() {
+        let mut stats = UploadStats::default();
+        let mut progress = ProgressReporter::new("page", 2);
+
+        begin_row(&mut stats);
+        let reported = uploaded_row(&mut progress, &mut stats).expect("reporting should succeed");
+        assert!(!reported);
+
+        begin_row(&mut stats);
+        let reported = skip_row(&mut progress, &mut stats).expect("reporting should succeed");
+        assert!(reported);
+        assert_eq!(stats.scanned, 2);
+        assert_eq!(stats.uploaded, 1);
+        assert_eq!(stats.skipped_namespace, 1);
+    }
 }
