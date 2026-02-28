@@ -4,6 +4,11 @@ redis = "latest"
 
 [env]
 REDIS_URL = "redis://localhost:6379"
+REDIS_HOST = "localhost"
+REDIS_PORT = "6379"
+REDIS_USERNAME = ""
+REDIS_PASSWORD = ""
+REDIS_DB = "0"
 WIKIDUMP_PAGE_SQL = "/home/erykksc/wikipedia/enwiki-latest-page.sql"
 WIKIDUMP_PAGELINKS_SQL = "/home/erykksc/wikipedia/enwiki-latest-pagelinks.sql"
 WIKIDUMP_LINKTARGET_SQL = "/home/erykksc/wikipedia/enwiki-latest-linktarget.sql"

@@ -1,42 +1,4 @@
-import { fetch } from "undici";
-
-const WIKI_API = "https://en.wikipedia.org/w/api.php";
-
-type WikiPage = {
-  pageid: number;
-  ns: number;
-  title: string;
-  links?: Array<{ title: string }>;
-};
-
-type WikiResponse = {
-  continue?: {
-    plcontinue: string;
-  };
-  query: {
-    normalized?: Array<{ from: string; to: string }>;
-    pages: Record<string, WikiPage>;
-  };
-};
-
-const fetchJson = async (
-  params: Record<string, string>,
-): Promise<WikiResponse> => {
-  // build URL
-  const url = new URL(WIKI_API);
-  url.search = new URLSearchParams({
-    format: "json",
-    formatversion: "2",
-    origin: "*",
-    ...params,
-  }).toString();
-
-  const res = await fetch(url.toString());
-  if (!res.ok) {
-    throw new Error(`Wikipedia API error: ${res.status}`);
-  }
-  return (await res.json()) as any;
-};
+import { cache } from './cache.js';
 
 type OutLink = {
   srcTitle: string;
@@ -44,75 +6,87 @@ type OutLink = {
 };
 
 type QueryOutlinksResponse = {
-  plcontinue: string | undefined;
+  plcontinue: undefined;
   outLinks: Array<OutLink>;
-  normalized: Record<string, string>; // Record<from, to>
+  normalized: Record<string, string>;
 };
 
-// This function queries links one time, but the response may return
-// 'plcontinue' tag, which would mean that we need to query again
-export const queryOutlinks = async (
-  titles: string[],
-  plcontinue?: string,
-): Promise<QueryOutlinksResponse> => {
-  let query: Record<string, string> = {
-    action: "query",
-    prop: "links",
-    titles: titles.join("|"),
-    pllimit: "max",
-    plnamespace: "0",
-  };
-  if (plcontinue) {
-    query["plcontinue"] = plcontinue;
-  }
-  const res = (await fetchJson(query)) as WikiResponse;
-  if (!res.query || !res.query.pages) {
-    console.error("Wrong wikipedia api response", res);
-    throw Error("Wrong wikipedia api response");
+const titleCandidates = (title: string): string[] => {
+  const trimmed = title.trim();
+  if (!trimmed) {
+    return [];
   }
 
-  const normalized: Record<string, string> = {};
-  for (const normalization of Object.values(res.query.normalized || [])) {
-    normalized[normalization.from] = normalization.to;
+  const addCandidate = (set: Set<string>, value: string): void => {
+    if (!value) {
+      return;
+    }
+    set.add(value);
+
+    const capitalized = value.charAt(0).toUpperCase() + value.slice(1);
+    set.add(capitalized);
+  };
+
+  const candidates = new Set<string>();
+  addCandidate(candidates, trimmed);
+  addCandidate(candidates, trimmed.replace(/ /g, '_'));
+  addCandidate(candidates, trimmed.replace(/_/g, ' '));
+
+  return [...candidates];
+};
+
+const getPageIdByTitle = async (title: string): Promise<number | null> => {
+  const pageIdRaw = await cache.get(`page:${title}`);
+  if (!pageIdRaw) {
+    return null;
   }
+
+  const pageId = Number(pageIdRaw);
+  if (!Number.isInteger(pageId)) {
+    throw new Error(`Invalid page id for title '${title}'`);
+  }
+
+  return pageId;
+};
+
+const getOutLinksForTitle = async (title: string): Promise<Array<OutLink>> => {
+  const pageId = await getPageIdByTitle(title);
+  if (!pageId) {
+    return [];
+  }
+
+  const targetIds = await cache.smembers(`pagelinks:${pageId}`);
+  if (targetIds.length === 0) {
+    return [];
+  }
+
+  const targetTitles = await cache.mget(
+    targetIds.map((targetId) => `linktarget:${targetId}`),
+  );
 
   const outLinks: Array<OutLink> = [];
-  for (const wikipage of Object.values(res.query.pages)) {
-    if (!wikipage.links) {
+  for (const targetTitle of targetTitles) {
+    if (!targetTitle) {
       continue;
     }
-    for (const link of wikipage.links) {
-      outLinks.push({
-        srcTitle: wikipage.title,
-        targetTitle: link.title,
-      });
-    }
+    outLinks.push({ srcTitle: title, targetTitle });
   }
 
-  return {
-    plcontinue: res.continue?.plcontinue,
-    outLinks,
-    normalized,
-  };
+  return outLinks;
 };
 
 export const wikiQueryLinksFully = async (
   titles: string[],
 ): Promise<QueryOutlinksResponse> => {
-  let { outLinks, normalized, plcontinue } = await queryOutlinks(titles);
-
-  while (plcontinue) {
-    let res = await queryOutlinks(titles, plcontinue);
-    outLinks.push(...res.outLinks);
-    for (const [from, to] of Object.entries(res.normalized)) {
-      normalized[from] = to;
-    }
-    plcontinue = res.plcontinue;
+  const outLinks: Array<OutLink> = [];
+  for (const title of titles) {
+    const titleOutLinks = await getOutLinksForTitle(title);
+    outLinks.push(...titleOutLinks);
   }
 
   return {
     outLinks,
-    normalized,
+    normalized: {},
     plcontinue: undefined,
   };
 };
@@ -120,19 +94,16 @@ export const wikiQueryLinksFully = async (
 export const resolveTitle = async (
   title: string,
 ): Promise<{ normalizedTitle: string; pageId: number }> => {
-  let query: Record<string, string> = {
-    action: "query",
-    titles: title,
-  };
-  const res = (await fetchJson(query)) as WikiResponse;
-
-  const firstPage = res.query.pages[0];
-  if (firstPage) {
-    return {
-      pageId: firstPage.pageid,
-      normalizedTitle: firstPage.title,
-    };
-  } else {
-    throw new Error("Couldn't get the first page, api is broken");
+  const candidates = titleCandidates(title);
+  for (const candidate of candidates) {
+    const pageId = await getPageIdByTitle(candidate);
+    if (pageId) {
+      return {
+        pageId,
+        normalizedTitle: candidate,
+      };
+    }
   }
+
+  throw new Error(`Title '${title}' was not found in Redis`);
 };

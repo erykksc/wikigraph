@@ -1,30 +1,39 @@
-import Redis from "ioredis";
-import type { ExpandResponse } from "@wikipedia-graph/shared";
+import { Redis } from "ioredis";
 
-const redisUrl =
-  process.env.REDIS_URL || "redis://localhost:6379";
-
-export const cache = new Redis(redisUrl);
-
-const DEFAULT_TTL_SECONDS = 60 * 60 * 24;
-
-export const getCachedLinks = async (
-  pageId: number,
-): Promise<ExpandResponse | null> => {
-  const value = await cache.get(`wiki:links:${pageId}`);
-  if (!value) {
-    return null;
+const parseEnvNumber = (
+  rawValue: string | undefined,
+  fallback: number,
+  envName: string,
+): number => {
+  if (!rawValue) {
+    return fallback;
   }
-  return JSON.parse(value) as ExpandResponse;
+
+  const parsed = Number(rawValue);
+  if (!Number.isInteger(parsed)) {
+    throw new Error(`${envName} must be an integer`);
+  }
+
+  return parsed;
 };
 
-export const setCachedLinks = async (
-  pageId: number,
-  payload: ExpandResponse,
-): Promise<void> => {
-  await cache.setex(
-    `wiki:links:${pageId}`,
-    DEFAULT_TTL_SECONDS,
-    JSON.stringify(payload),
-  );
-};
+const explicitRedisConfigProvided =
+  process.env.REDIS_HOST !== undefined ||
+  process.env.REDIS_PORT !== undefined ||
+  process.env.REDIS_USERNAME !== undefined ||
+  process.env.REDIS_PASSWORD !== undefined ||
+  process.env.REDIS_DB !== undefined;
+
+const redisUrl = process.env.REDIS_URL;
+
+export const cache = redisUrl
+  ? new Redis(redisUrl)
+  : explicitRedisConfigProvided
+  ? new Redis({
+      host: process.env.REDIS_HOST ?? "127.0.0.1",
+      port: parseEnvNumber(process.env.REDIS_PORT, 6379, "REDIS_PORT"),
+      username: process.env.REDIS_USERNAME,
+      password: process.env.REDIS_PASSWORD,
+      db: parseEnvNumber(process.env.REDIS_DB, 0, "REDIS_DB"),
+    })
+  : new Redis("redis://127.0.0.1:6379/0");

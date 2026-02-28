@@ -3,7 +3,6 @@ import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import { z } from "zod";
 import { resolveTitle, wikiQueryLinksFully } from "./wiki.js";
-import { getCachedLinks, setCachedLinks } from "./cache.js";
 import type { ExpandResponse } from "@wikipedia-graph/shared";
 
 const app = Fastify({ logger: true });
@@ -21,12 +20,7 @@ app.get("/expand", async (request, reply) => {
   const rawTitle = parsed.data.title.trim();
 
   try {
-    const { normalizedTitle, pageId } = await resolveTitle(rawTitle);
-
-    const cached = await getCachedLinks(pageId);
-    if (cached) {
-      return cached;
-    }
+    const { normalizedTitle } = await resolveTitle(rawTitle);
     const { outLinks } = await wikiQueryLinksFully([normalizedTitle]);
 
     const newNodes: ExpandResponse["newNodes"] = [
@@ -59,7 +53,6 @@ app.get("/expand", async (request, reply) => {
       newEdges,
     };
 
-    await setCachedLinks(pageId, payload);
     return payload;
   } catch (error) {
     request.log.error(error);
