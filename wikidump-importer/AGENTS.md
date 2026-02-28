@@ -6,20 +6,24 @@ Guide for agentic coding tools operating in this repository.
 - Language: Rust
 - Edition: 2024
 - Crate: `wikidump_importer`
-- Type: single Cargo package with binaries in `src/bin/`
+- Type: single Cargo package with one CLI binary (`src/main.rs`) and library modules (`src/lib.rs`)
 - Purpose: parse Wikipedia SQL dumps into CSV outputs and upload selected data to Redis-compatible storage
 
-Current binaries:
-- `page` (`src/bin/page.rs`)
-- `pagelinks` (`src/bin/pagelinks.rs`)
-- `linktarget` (`src/bin/linktarget.rs`)
+Current CLI subcommands:
+- `export-csv`
+- `redis`
 
 Key files:
 - `Cargo.toml` - package metadata/dependencies
-- `src/lib.rs` - shared module exports
-- `src/main.rs` - clap CLI with `export-csv` and `redis` subcommands
+- `src/main.rs` - CLI entrypoint
+- `src/lib.rs` - module exports (`commands`, `outputs`, `parsers`, `sql_parsing`)
+- `src/commands/mod.rs` - clap command wiring
+- `src/commands/export_csv.rs` - CSV export subcommand
+- `src/commands/redis.rs` - Redis upload subcommand
+- `src/outputs/csv.rs` - CSV formatting/writers
+- `src/outputs/redis.rs` - Redis key/value writer helpers
+- `src/parsers/*.rs` - table-specific row parsers
 - `src/sql_parsing.rs` - shared byte-level parsing helpers
-- `src/bin/*.rs` - parser executables
 
 ## 2. Build/Lint/Test/Run Commands
 Run from repository root.
@@ -28,28 +32,20 @@ Build:
 ```bash
 cargo build
 cargo build --release
-cargo build --bin page
-cargo build --bin pagelinks
-cargo build --bin linktarget
+cargo build --bin wikidump_importer
 ```
 
 Run:
 ```bash
-cargo run --bin page
-cargo run --bin page -- /path/to/page.sql
-
-cargo run --bin pagelinks
-cargo run --bin pagelinks -- /path/to/pagelinks.sql 1000
-
-cargo run --bin linktarget
-cargo run --bin linktarget -- /path/to/linktarget.sql 1000
-
-# Unified CLI (current entrypoint)
+# CLI entrypoint
 cargo run -- export-csv --table page --input /path/to/page.sql
+cargo run -- export-csv --table pagelinks --input /path/to/pagelinks.sql --limit 1000
+cargo run -- export-csv --table linktarget --input /path/to/linktarget.sql
+
 cargo run -- redis --page /path/to/page.sql --pagelinks /path/to/pagelinks.sql --linktarget /path/to/linktarget.sql
 
 # Optimized release run
-cargo run --release -- redis --page ~/wikipedia/page.sql --pagelinks ~/wikipedia/pagelinks.sql --linktarget ~/wikipedia/linktarget.sql --namespace 0 --batch-size 1000
+cargo run --release -- redis --page ~/wikipedia/page.sql --pagelinks ~/wikipedia/pagelinks.sql --linktarget ~/wikipedia/linktarget.sql --namespace 0 --batch-size 1000 --progress-every 1000000
 ```
 
 Format and lint:
@@ -68,10 +64,13 @@ cargo test
 # library tests only
 cargo test --lib
 
-# per binary target
-cargo test --bin page
-cargo test --bin pagelinks
-cargo test --bin linktarget
+# binary entrypoint tests (if present)
+cargo test --bin wikidump_importer
+
+# parser-focused module tests
+cargo test pagelinks::tests
+cargo test linktarget::tests
+cargo test sql_parsing::tests
 ```
 
 Single-test workflows (preferred inner loop):
@@ -79,12 +78,12 @@ Single-test workflows (preferred inner loop):
 # name filter across all targets
 cargo test parse_row
 
-# name filter inside one binary
-cargo test --bin pagelinks parse_row
-cargo test --bin linktarget parse_row
+# name filter inside parser modules
+cargo test pagelinks::tests::parse_row
+cargo test linktarget::tests::parse_row
 
 # exact single test
-cargo test --bin linktarget parse_row_handles_spaces -- --exact
+cargo test parse_row_handles_spaces -- --exact
 cargo test --lib parse_sql_quoted_bytes_handles_escapes -- --exact
 
 # show test output
@@ -178,6 +177,7 @@ Arguments:
 - `--linktarget` (default: `linktarget.sql`)
 - `--namespace` (default: `0`) - applied to all three tables
 - `--batch-size` (default: `1000`) - number of write commands sent per pipeline flush
+- `--progress-every` (default: `1000000`) - emit progress line every N scanned rows per table (`0` disables progress lines)
 - `--redis-url` (optional) - if omitted, resolve from `REDIS_URL`, then `redis://127.0.0.1:6379/`
 
 Filtering behavior:
@@ -185,16 +185,24 @@ Filtering behavior:
 - `pagelinks`: include rows where `pl_from_namespace == --namespace`
 - `linktarget`: include rows where `lt_namespace == --namespace`
 
-Resulting Redis-compatible keyspace (decimal IDs, with prefixes):
-- `page:<page_title>` -> string value `<page_id>`
-- `pagelinks:<from_page_id>` -> set of members `<linktarget_id>`
-- `linktarget:<linktarget_id>` -> string value `<target_title>`
+Resulting Redis-compatible keyspace (exact prefixes used by code):
+- `page:<page_title>` -> Redis string (`SET`) whose value is decimal `page.id` (`u32`) text
+- `pagelinks:<from_page_id>` -> Redis set (`SADD`) of decimal `pl_target_id` (`u64`) text members
+- `linktarget:<linktarget_id>` -> Redis string (`SET`) whose value is decoded `lt_title` text
+
+Encoding and format details:
+- IDs in Redis keys/values are decimal (base-10), not the hex format used by CSV output for some columns.
+- `linktarget` titles are SQL-unescaped bytes decoded as UTF-8 before writing; invalid UTF-8 returns `InvalidData` and aborts the command.
+- No TTL/expiration is set by this command.
+- Keys do not include namespace in their name; namespace only controls which rows are imported.
 
 Operational notes for users:
 - `pagelinks` is many-to-many, so `SADD` is used to accumulate multiple targets per source page.
+- Duplicate `pagelinks` pairs are naturally deduplicated by Redis set semantics.
 - `SET` keys for `page:*` and `linktarget:*` are overwritten if the same key is written again in later runs.
 - The command does not clear existing keys. Re-running with different dumps/namespaces can leave mixed data unless you delete keys first.
-- The command prints per-table counters to stderr: `scanned`, `uploaded`, `skipped_namespace`.
+- The command validates `--batch-size > 0` and fails fast on invalid values.
+- The command prints progress and per-table counters to stderr: `scanned`, `uploaded`, `skipped_namespace`.
 
 Recommended usage example:
 ```bash
