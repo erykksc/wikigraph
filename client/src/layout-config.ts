@@ -91,7 +91,7 @@ export const layoutControls: SettingControl[] = [
 
 export const defaultLayoutSettings: ForceAtlas2Settings = {
   adjustSizes: true,
-  barnesHutOptimize: false,
+  barnesHutOptimize: true,
   barnesHutTheta: 0.5,
   edgeWeightInfluence: 1,
   gravity: 1,
