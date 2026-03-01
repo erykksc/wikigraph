@@ -2,7 +2,11 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import { z } from "zod";
-import { resolveTitle, wikiQueryLinksFully } from "./wiki.js";
+import {
+  denormalizeTitle,
+  normalizeTitle,
+  wikiQueryLinksFully,
+} from "./wiki.js";
 import type { ExpandResponse } from "@wikipedia-graph/shared";
 
 const app = Fastify({ logger: true });
@@ -20,11 +24,15 @@ app.get("/expand", async (request, reply) => {
   const rawTitle = parsed.data.title.trim();
 
   try {
-    const { normalizedTitle } = await resolveTitle(rawTitle);
-    const { outLinks } = await wikiQueryLinksFully([normalizedTitle]);
+    const normTitle = normalizeTitle(rawTitle);
+    let outLinks = await wikiQueryLinksFully([normTitle]);
+    outLinks = outLinks.map((l) => ({
+      srcTitle: denormalizeTitle(l.srcTitle),
+      targetTitle: denormalizeTitle(l.targetTitle),
+    }));
 
     const newNodes: ExpandResponse["newNodes"] = [
-      normalizedTitle,
+      normTitle,
       ...outLinks.map((l) => l.targetTitle),
     ];
     const newEdges: ExpandResponse["newEdges"] = outLinks.map((outLink) => ({

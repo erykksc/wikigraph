@@ -1,38 +1,8 @@
-import { cache } from './cache.js';
+import { cache } from "./cache.js";
 
 type OutLink = {
   srcTitle: string;
   targetTitle: string;
-};
-
-type QueryOutlinksResponse = {
-  plcontinue: undefined;
-  outLinks: Array<OutLink>;
-  normalized: Record<string, string>;
-};
-
-const titleCandidates = (title: string): string[] => {
-  const trimmed = title.trim();
-  if (!trimmed) {
-    return [];
-  }
-
-  const addCandidate = (set: Set<string>, value: string): void => {
-    if (!value) {
-      return;
-    }
-    set.add(value);
-
-    const capitalized = value.charAt(0).toUpperCase() + value.slice(1);
-    set.add(capitalized);
-  };
-
-  const candidates = new Set<string>();
-  addCandidate(candidates, trimmed);
-  addCandidate(candidates, trimmed.replace(/ /g, '_'));
-  addCandidate(candidates, trimmed.replace(/_/g, ' '));
-
-  return [...candidates];
 };
 
 const getPageIdByTitle = async (title: string): Promise<number | null> => {
@@ -77,33 +47,23 @@ const getOutLinksForTitle = async (title: string): Promise<Array<OutLink>> => {
 
 export const wikiQueryLinksFully = async (
   titles: string[],
-): Promise<QueryOutlinksResponse> => {
+): Promise<Array<OutLink>> => {
   const outLinks: Array<OutLink> = [];
   for (const title of titles) {
     const titleOutLinks = await getOutLinksForTitle(title);
     outLinks.push(...titleOutLinks);
   }
 
-  return {
-    outLinks,
-    normalized: {},
-    plcontinue: undefined,
-  };
+  return outLinks;
 };
 
-export const resolveTitle = async (
-  title: string,
-): Promise<{ normalizedTitle: string; pageId: number }> => {
-  const candidates = titleCandidates(title);
-  for (const candidate of candidates) {
-    const pageId = await getPageIdByTitle(candidate);
-    if (pageId) {
-      return {
-        pageId,
-        normalizedTitle: candidate,
-      };
-    }
-  }
+// Normalizes the title for wiki search in redis
+export const normalizeTitle = (title: string) => {
+  const normTitle = title.replace(/ /g, "_");
+  return normTitle.charAt(0).toUpperCase() + normTitle.slice(1);
+};
 
-  throw new Error(`Title '${title}' was not found in Redis`);
+// Denormalizes the title to make it human readable
+export const denormalizeTitle = (normalizedTitle: string) => {
+  return normalizedTitle.replace(/_/g, " ");
 };
