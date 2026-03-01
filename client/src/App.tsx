@@ -125,7 +125,7 @@ function App() {
             }
             aria-label="Query source"
           >
-            <option value="server">English (custom server)</option>
+            <option value="server">English (cached en.wikipedia.org)</option>
             {WIKIPEDIA_LANGUAGES.map((language) => (
               <option key={language.code} value={language.code}>
                 {language.label} ({language.code}.wikipedia.org)
