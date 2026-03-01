@@ -10,14 +10,25 @@ services:
       - keydb
     labels:
       - traefik.enable=true
+
+      - traefik.http.routers.wikigraph-http.rule=Host(`wikigraph.eryk.one`)
+      - traefik.http.routers.wikigraph-http.entrypoints=web
+      - traefik.http.routers.wikigraph-http.middlewares=wikigraph-https-redirect
+      - traefik.http.routers.wikigraph-http.service=wikigraph
+
+      - traefik.http.middlewares.wikigraph-https-redirect.redirectscheme.scheme=https
+      - traefik.http.middlewares.wikigraph-https-redirect.redirectscheme.permanent=true
+
       - traefik.http.routers.wikigraph.rule=Host(`wikigraph.eryk.one`)
       - traefik.http.routers.wikigraph.entrypoints=websecure
       - traefik.http.routers.wikigraph.tls=true
+      - traefik.http.routers.wikigraph.tls.certresolver=letsencrypt
       - traefik.http.services.wikigraph.loadbalancer.server.port=80
 
       - traefik.http.routers.wikigraph-expand.rule=Host(`wikigraph.eryk.one`) && Path(`/api/expand`)
       - traefik.http.routers.wikigraph-expand.entrypoints=websecure
       - traefik.http.routers.wikigraph-expand.tls=true
+      - traefik.http.routers.wikigraph-expand.tls.certresolver=letsencrypt
       - traefik.http.routers.wikigraph-expand.priority=100
       - traefik.http.routers.wikigraph-expand.service=wikigraph
       - traefik.http.routers.wikigraph-expand.middlewares=wikigraph-expand-ratelimit
