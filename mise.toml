@@ -20,7 +20,7 @@ description = "Run KeyDB in Docker (flash tiering, 1GB RAM cache)"
 run = """
 docker run --rm -it \
   -p 6379:6379 \
-  -v $(pwd)/.keydb-data:/data \
+  -v $(pwd)/.keydb-data:/data:Z \
   --name keydb \
   eqalpha/keydb:latest \
   keydb-server /etc/keydb/keydb.conf \
