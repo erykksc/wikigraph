@@ -77,6 +77,7 @@ type GraphEdgeAttributes = {
 type GraphControllerOptions = {
   container: HTMLElement;
   onExpand: (title: string) => Promise<ExpandResponse>;
+  resolveArticleUrl?: (title: string) => string;
   initialLayoutSettings?: ForceAtlas2Settings;
   onNodeCountChange?: (count: number) => void;
   onEdgeCountChange?: (count: number) => void;
@@ -104,6 +105,7 @@ export class GraphController {
   private layout: FA2;
   private layoutSettings: ForceAtlas2Settings;
   private onExpand: (title: string) => Promise<ExpandResponse>;
+  private resolveArticleUrl: (title: string) => string;
   private onNodeCountChange?: (count: number) => void;
   private onEdgeCountChange?: (count: number) => void;
   private hoveredNode: string | null = null;
@@ -129,6 +131,9 @@ export class GraphController {
       settings: this.layoutSettings,
     });
     this.onExpand = options.onExpand;
+    this.resolveArticleUrl =
+      options.resolveArticleUrl ??
+      ((title) => `https://en.wikipedia.org/wiki/${encodeURIComponent(title)}`);
     this.onNodeCountChange = options.onNodeCountChange;
     this.onEdgeCountChange = options.onEdgeCountChange;
     this.layout.start();
@@ -215,7 +220,7 @@ export class GraphController {
 
     this.sigma.on("rightClickNode", async ({ node }) => {
       const attrs = this.graph.getNodeAttributes(node);
-      const url = `https://en.wikipedia.org/wiki/${encodeURIComponent(attrs.label)}`;
+      const url = this.resolveArticleUrl(attrs.label);
       window.open(url, "_blank");
     });
 

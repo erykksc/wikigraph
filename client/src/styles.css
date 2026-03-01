@@ -78,6 +78,20 @@ body,
   outline: none;
 }
 
+.controls select {
+  min-width: 150px;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  border: 1px solid var(--panel-border);
+  background: rgba(10, 18, 28, 0.7);
+  color: var(--text);
+}
+
+.controls select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .controls input::placeholder {
   color: var(--muted);
 }
@@ -231,6 +245,10 @@ body,
 
   .controls input {
     flex: 1;
+    min-width: 0;
+  }
+
+  .controls select {
     min-width: 0;
   }
 

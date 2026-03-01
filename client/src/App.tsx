@@ -1,8 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import type { ForceAtlas2Settings } from "graphology-layout-forceatlas2";
-import { expandTitle } from "./api";
+import {
+  WIKIPEDIA_LANGUAGES,
+  expandTitle,
+  type WikipediaLanguage,
+} from "./api";
 import { GraphController } from "./graph";
 import { layoutControls, defaultLayoutSettings } from "./layout-config";
+
+type QuerySource = "server" | WikipediaLanguage;
 
 function App() {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -10,14 +16,21 @@ function App() {
   const hasAppliedInitialLayoutRef = useRef(false);
   const [seed, setSeed] = useState("Graph theory");
   const [status, setStatus] = useState("Awaiting seed");
-  const [layoutSettings, setLayoutSettings] =
-    useState<ForceAtlas2Settings>(defaultLayoutSettings);
+  const [querySource, setQuerySource] = useState<QuerySource>("server");
+  const [layoutSettings, setLayoutSettings] = useState<ForceAtlas2Settings>(
+    defaultLayoutSettings,
+  );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [nodeCount, setNodeCount] = useState(0);
   const [edgeCount, setEdgeCount] = useState(0);
+  const querySourceRef = useRef<QuerySource>(querySource);
 
   const hasGraph = nodeCount > 0;
+
+  useEffect(() => {
+    querySourceRef.current = querySource;
+  }, [querySource]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -29,7 +42,11 @@ function App() {
         setError(null);
         setStatus(`Expanding ${title}`);
         try {
-          const payload = await expandTitle(title);
+          const source = querySourceRef.current;
+          const payload = await expandTitle(title, {
+            backend: source === "server" ? "server" : "wikipedia",
+            language: source === "server" ? "en" : source,
+          });
           setStatus(`Expanded ${title}`);
           return payload;
         } catch (err) {
@@ -41,6 +58,11 @@ function App() {
         } finally {
           setIsLoading(false);
         }
+      },
+      resolveArticleUrl: (title) => {
+        const source = querySourceRef.current;
+        const language = source === "server" ? "en" : source;
+        return `https://${language}.wikipedia.org/wiki/${encodeURIComponent(title)}`;
       },
       onNodeCountChange: setNodeCount,
       onEdgeCountChange: setEdgeCount,
@@ -96,6 +118,20 @@ function App() {
             onChange={(event) => setSeed(event.target.value)}
             placeholder="Seed article title"
           />
+          <select
+            value={querySource}
+            onChange={(event) =>
+              setQuerySource(event.target.value as QuerySource)
+            }
+            aria-label="Query source"
+          >
+            <option value="server">English (custom server)</option>
+            {WIKIPEDIA_LANGUAGES.map((language) => (
+              <option key={language.code} value={language.code}>
+                {language.label} ({language.code}.wikipedia.org)
+              </option>
+            ))}
+          </select>
           <button type="submit" disabled={isLoading}>
             {isLoading ? "Loading..." : "Grow Graph"}
           </button>
@@ -106,11 +142,7 @@ function App() {
           >
             Fit View
           </button>
-          <button
-            type="button"
-            onClick={handleReset}
-            disabled={!hasGraph}
-          >
+          <button type="button" onClick={handleReset} disabled={!hasGraph}>
             Reset
           </button>
         </form>
