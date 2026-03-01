@@ -4,7 +4,6 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
-      - HOST=0.0.0.0
       - PORT=80
       - REDIS_URL=redis://keydb:6379
     depends_on:
@@ -32,9 +31,13 @@ services:
 
   keydb:
     image: eqalpha/keydb:latest
-    command: keydb-server --save 60 1000 --appendonly yes
+    command: >-
+      keydb-server /etc/keydb/keydb.conf
+      --storage-provider flash /data
+      --maxmemory 100mb
+      --maxmemory-policy allkeys-lfu
     volumes:
-      - keydb-data:/data
+      - ./keydb-data:/data:Z
     networks:
       - dokploy-network
     restart: unless-stopped
@@ -42,6 +45,3 @@ services:
 networks:
   dokploy-network:
     external: true
-
-volumes:
-  keydb-data:
