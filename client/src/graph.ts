@@ -55,7 +55,7 @@ const drawLabelWithBackground = (
           }
           return settings.labelColor.color ?? LABEL_COLOR_DEFAULT;
         })()
-      : settings.labelColor.color ?? LABEL_COLOR_DEFAULT;
+      : (settings.labelColor.color ?? LABEL_COLOR_DEFAULT);
 
   context.fillStyle = data.labelColor ?? labelColor;
   context.fillText(data.label, x, data.y + labelSize / 3);

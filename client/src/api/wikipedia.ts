@@ -1,18 +1,18 @@
-import type { ExpandResponse } from '@wikipedia-graph/shared';
+import type { ExpandResponse } from "@wikipedia-graph/shared";
 
 export const WIKIPEDIA_LANGUAGES = [
-  { code: 'en', label: 'English' },
-  { code: 'pl', label: 'Polish' },
-  { code: 'de', label: 'German' },
-  { code: 'fr', label: 'French' },
-  { code: 'es', label: 'Spanish' },
-  { code: 'it', label: 'Italian' },
-  { code: 'ja', label: 'Japanese' },
-  { code: 'zh', label: 'Chinese' },
-  { code: 'tr', label: 'Turkish' },
+  { code: "en", label: "English" },
+  { code: "pl", label: "Polish" },
+  { code: "de", label: "German" },
+  { code: "fr", label: "French" },
+  { code: "es", label: "Spanish" },
+  { code: "it", label: "Italian" },
+  { code: "ja", label: "Japanese" },
+  { code: "zh", label: "Chinese" },
+  { code: "tr", label: "Turkish" },
 ] as const;
 
-export type WikipediaLanguage = (typeof WIKIPEDIA_LANGUAGES)[number]['code'];
+export type WikipediaLanguage = (typeof WIKIPEDIA_LANGUAGES)[number]["code"];
 
 type WikiPage = {
   pageid?: number;
@@ -58,9 +58,9 @@ const fetchWikiJson = async (
 ): Promise<WikiResponse> => {
   const url = new URL(wikiApiBase(language));
   url.search = new URLSearchParams({
-    format: 'json',
-    formatversion: '2',
-    origin: '*',
+    format: "json",
+    formatversion: "2",
+    origin: "*",
     ...params,
   }).toString();
 
@@ -82,11 +82,11 @@ const queryOutlinks = async (
   plcontinue?: string,
 ): Promise<QueryOutlinksResponse> => {
   const params: Record<string, string> = {
-    action: 'query',
-    prop: 'links',
+    action: "query",
+    prop: "links",
     titles: title,
-    pllimit: 'max',
-    plnamespace: '0',
+    pllimit: "max",
+    plnamespace: "0",
   };
 
   if (plcontinue) {
@@ -117,13 +117,13 @@ const resolveTitle = async (
   language: WikipediaLanguage,
 ): Promise<string> => {
   const res = await fetchWikiJson(language, {
-    action: 'query',
+    action: "query",
     titles: title,
   });
 
   const page = getPages(res)[0];
   if (!page || page.missing || !page.title) {
-    throw new Error('Wikipedia article not found');
+    throw new Error("Wikipedia article not found");
   }
 
   return page.title;

@@ -1,15 +1,15 @@
-import type { ExpandResponse } from '@wikipedia-graph/shared';
-import { expandTitleFromServer } from './server';
+import type { ExpandResponse } from "@wikipedia-graph/shared";
+import { expandTitleFromServer } from "./server";
 import {
   expandTitleFromWikipedia,
   type WikipediaLanguage,
   WIKIPEDIA_LANGUAGES,
-} from './wikipedia';
+} from "./wikipedia";
 
 export type { WikipediaLanguage };
 export { WIKIPEDIA_LANGUAGES };
 
-export type BackendMode = 'server' | 'wikipedia';
+export type BackendMode = "server" | "wikipedia";
 
 type ExpandTitleOptions = {
   backend: BackendMode;
@@ -20,7 +20,7 @@ export const expandTitle = async (
   title: string,
   options: ExpandTitleOptions,
 ): Promise<ExpandResponse> => {
-  if (options.backend === 'server') {
+  if (options.backend === "server") {
     return expandTitleFromServer(title);
   }
 
