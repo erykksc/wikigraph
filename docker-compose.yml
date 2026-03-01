@@ -48,7 +48,7 @@ services:
       --maxmemory 100mb
       --maxmemory-policy allkeys-lfu
     volumes:
-      - ./keydb-data:/data:Z
+      - keydb-data:/data
     networks:
       - dokploy-network
     restart: unless-stopped
@@ -56,3 +56,6 @@ services:
 networks:
   dokploy-network:
     external: true
+
+volumes:
+  keydb-data:
