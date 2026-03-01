@@ -80,6 +80,8 @@ const start = async () => {
   await app.register(helmet, {
     contentSecurityPolicy: {
       directives: {
+        defaultSrc: ["'self'"],
+        connectSrc: ["'self'", "https://*.wikipedia.org"],
         workerSrc: ["'self'", "blob:"],
       },
     },
