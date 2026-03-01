@@ -29,11 +29,11 @@ const redisUrl = process.env.REDIS_URL;
 export const cache = redisUrl
   ? new Redis(redisUrl)
   : explicitRedisConfigProvided
-  ? new Redis({
-      host: process.env.REDIS_HOST ?? "127.0.0.1",
-      port: parseEnvNumber(process.env.REDIS_PORT, 6379, "REDIS_PORT"),
-      username: process.env.REDIS_USERNAME,
-      password: process.env.REDIS_PASSWORD,
-      db: parseEnvNumber(process.env.REDIS_DB, 0, "REDIS_DB"),
-    })
-  : new Redis("redis://127.0.0.1:6379/0");
+    ? new Redis({
+        host: process.env.REDIS_HOST ?? "127.0.0.1",
+        port: parseEnvNumber(process.env.REDIS_PORT, 6379, "REDIS_PORT"),
+        username: process.env.REDIS_USERNAME,
+        password: process.env.REDIS_PASSWORD,
+        db: parseEnvNumber(process.env.REDIS_DB, 0, "REDIS_DB"),
+      })
+    : new Redis("redis://127.0.0.1:6379/0");

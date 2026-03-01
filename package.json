@@ -11,7 +11,8 @@
   ],
   "scripts": {
     "dev": "concurrently -n server,client -c cyan,magenta \"npm:dev --prefix server\" \"npm:dev --prefix client\"",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "format": "prettier --write . --ignore-path .gitignore --ignore-path ./client/.gitignore --ignore-path ./wikidump-importer/.gitignore"
   },
   "keywords": [],
   "author": "",
@@ -19,5 +20,8 @@
   "type": "commonjs",
   "devDependencies": {
     "concurrently": "^9.2.1"
+  },
+  "dependencies": {
+    "prettier": "^3.8.1"
   }
 }

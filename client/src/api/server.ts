@@ -1,11 +1,11 @@
 import type { ExpandResponse } from "@wikipedia-graph/shared";
 
-const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:3000";
+const API_BASE = import.meta.env.VITE_API_BASE ?? window.location.origin;
 
 export const expandTitleFromServer = async (
   title: string,
 ): Promise<ExpandResponse> => {
-  const url = new URL("/expand", API_BASE);
+  const url = new URL("/api/expand", API_BASE);
   url.searchParams.set("title", title);
 
   const res = await fetch(url);

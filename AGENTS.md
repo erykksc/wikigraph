@@ -136,8 +136,6 @@ Environment variables:
 - Client: Display errors to users via UI, log to console
 - Validate inputs with Zod schemas (server)
 
-
-
 - Server: Use single quotes for strings
 - Client JSX: Use double quotes for attributes, single quotes elsewhere
 - Use semicolons

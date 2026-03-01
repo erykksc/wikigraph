@@ -40,3 +40,16 @@ cargo run --release --manifest-path wikidump-importer/Cargo.toml -- redis \
   --batch-size "$WIKIDUMP_BATCH_SIZE" \
   --redis-url "$REDIS_URL"
 """
+
+[tasks.docker]
+run = """
+docker build -t wikigraph-app:local .
+docker run --rm -it \
+  --name wikigraph-app \
+  -p 3000:3000 \
+  --add-host=host.docker.internal:host-gateway \
+  -e HOST=0.0.0.0 \
+  -e PORT=3000 \
+  -e REDIS_URL=redis://host.docker.internal:6379 \
+  wikigraph-app:local
+"""

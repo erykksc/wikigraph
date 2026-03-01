@@ -15,6 +15,7 @@
   "dependencies": {
     "@fastify/cors": "^11.2.0",
     "@fastify/helmet": "^13.0.2",
+    "@fastify/static": "^9.0.0",
     "@wikipedia-graph/shared": "file:../shared",
     "fastify": "^5.7.4",
     "ioredis": "^5.9.3",
