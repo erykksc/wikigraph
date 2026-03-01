@@ -22,9 +22,9 @@ app.get("/expand", async (request, reply) => {
   }
 
   const rawTitle = parsed.data.title.trim();
+  const normTitle = normalizeTitle(rawTitle);
 
   try {
-    const normTitle = normalizeTitle(rawTitle);
     let outLinks = await wikiQueryLinksFully([normTitle]);
     outLinks = outLinks.map((l) => ({
       srcTitle: denormalizeTitle(l.srcTitle),
@@ -32,7 +32,7 @@ app.get("/expand", async (request, reply) => {
     }));
 
     const newNodes: ExpandResponse["newNodes"] = [
-      normTitle,
+      denormalizeTitle(normTitle),
       ...outLinks.map((l) => l.targetTitle),
     ];
     const newEdges: ExpandResponse["newEdges"] = outLinks.map((outLink) => ({
