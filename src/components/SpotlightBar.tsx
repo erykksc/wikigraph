@@ -56,14 +56,14 @@ const SpotlightBar = ({
     >
       <div className="spotlight__card">
         <form className="spotlight__form" onSubmit={onSubmit}>
-          <input
-            ref={seedInputRef}
-            type="text"
-            value={seed}
-            onChange={(event) => onSeedChange(event.target.value)}
-            placeholder="Wikipedia article title e.g. Bytom or Graph theory"
-          />
-          <div className="spotlight__actions">
+          <div className="spotlight__row spotlight__row--wrap">
+            <input
+              ref={seedInputRef}
+              type="text"
+              value={seed}
+              onChange={(event) => onSeedChange(event.target.value)}
+              placeholder="Wikipedia article title e.g. Bytom or Graph theory"
+            />
             <select
               value={querySource}
               onChange={(event) =>
@@ -77,6 +77,8 @@ const SpotlightBar = ({
                 </option>
               ))}
             </select>
+          </div>
+          <div className="spotlight__row spotlight__row--center">
             <button type="submit" disabled={isLoading}>
               {isLoading ? "Loading..." : "Grow Graph"}
             </button>
