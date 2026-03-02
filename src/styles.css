@@ -263,25 +263,33 @@ body,
 }
 
 .spotlight__row--wrap input {
-  flex: 2 1 320px;
+  flex: 1 1 280px;
   min-width: 220px;
 }
 
 .spotlight__row--wrap select {
-  flex: 1 1 220px;
-  min-width: 200px;
+  flex: 0 1 360px;
+  min-width: 280px;
 }
 
 .spotlight__row select {
   flex: 1;
   min-width: 160px;
-  height: 3.4rem;
-  padding: 0 1.1rem;
+  min-height: 3.4rem;
+  padding: 0.35rem 1.1rem;
   border-radius: 14px;
   border: 1px solid var(--panel-border);
   background: #1a2a3b;
   color: var(--text);
   font-size: 1.05rem;
+  line-height: 1.2;
+}
+
+.spotlight__row--wrap select {
+  flex: 0 1 300px;
+  width: clamp(240px, 28vw, 320px);
+  min-width: 240px;
+  max-width: 320px;
 }
 
 .spotlight__row button {
@@ -512,7 +520,6 @@ body,
   .spotlight__form input {
     flex: 0 0 auto;
     padding: 0.7rem 0.85rem;
-    font-size: 0.95rem;
   }
 
   .spotlight__row {
@@ -528,7 +535,15 @@ body,
 
   .spotlight__row--wrap {
     flex-direction: column;
-    align-items: stretch;
+    align-items: center;
+  }
+
+  .spotlight__row--wrap input {
+    width: 100%;
+  }
+
+  .spotlight__row--wrap select {
+    width: min(100%, 320px);
   }
 
   .graph-actions {

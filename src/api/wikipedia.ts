@@ -1,15 +1,15 @@
 import type { ExpandResponse } from "../types";
 
 export const WIKIPEDIA_LANGUAGES = [
-  { code: "en", label: "English" },
-  { code: "pl", label: "Polish" },
-  { code: "de", label: "German" },
-  { code: "fr", label: "French" },
-  { code: "es", label: "Spanish" },
-  { code: "it", label: "Italian" },
-  { code: "ja", label: "Japanese" },
-  { code: "zh", label: "Chinese" },
-  { code: "tr", label: "Turkish" },
+  { code: "en", label: "English", flag: "🇬🇧" },
+  { code: "pl", label: "Polish", flag: "🇵🇱" },
+  { code: "de", label: "German", flag: "🇩🇪" },
+  { code: "fr", label: "French", flag: "🇫🇷" },
+  { code: "es", label: "Spanish", flag: "🇪🇸" },
+  { code: "it", label: "Italian", flag: "🇮🇹" },
+  { code: "ja", label: "Japanese", flag: "🇯🇵" },
+  { code: "zh", label: "Chinese", flag: "🇨🇳" },
+  { code: "tr", label: "Turkish", flag: "🇹🇷" },
 ] as const;
 
 export type WikipediaLanguage = (typeof WIKIPEDIA_LANGUAGES)[number]["code"];

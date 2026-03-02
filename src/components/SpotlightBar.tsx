@@ -73,7 +73,8 @@ const SpotlightBar = ({
             >
               {WIKIPEDIA_LANGUAGES.map((language) => (
                 <option key={language.code} value={language.code}>
-                  {language.label} ({language.code}.wikipedia.org)
+                  {language.flag} {language.label} ({language.code}
+                  .wikipedia.org)
                 </option>
               ))}
             </select>
