@@ -20,6 +20,7 @@ function App() {
   const [nodeCount, setNodeCount] = useState(0);
   const [edgeCount, setEdgeCount] = useState(0);
   const [spotlightOpen, setSpotlightOpen] = useState(true);
+  const [controlsOpen, setControlsOpen] = useState(false);
   const querySourceRef = useRef<WikipediaLanguage>(querySource);
   const initialLayoutSettingsRef = useRef(layoutSettings);
   const prevHasGraphRef = useRef(false);
@@ -38,6 +39,12 @@ function App() {
       setSpotlightOpen(true);
     }
     prevHasGraphRef.current = hasGraph;
+  }, [hasGraph]);
+
+  useEffect(() => {
+    if (!hasGraph) {
+      setControlsOpen(false);
+    }
   }, [hasGraph]);
 
   useEffect(() => {
@@ -94,6 +101,7 @@ function App() {
     try {
       await graphRef.current.seed(seed.trim());
       setSpotlightOpen(false);
+      setSeed("");
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to load seed";
@@ -190,60 +198,96 @@ function App() {
             </a>
           </div>
         </div>
-        <aside className="controls-panel">
-          <div className="controls-panel__title">Layout Controls</div>
-          {layoutControls.map((control) => {
-            if (control.type === "boolean") {
-              const checked = Boolean(layoutSettings[control.key]);
-              return (
-                <label
-                  className="toggle"
-                  key={control.key}
-                  title={control.description}
-                >
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={(event) =>
-                      setLayoutSettings((prev) => ({
-                        ...prev,
-                        [control.key]: event.target.checked,
-                      }))
-                    }
-                  />
-                  <span>{control.label}</span>
-                </label>
-              );
-            }
-
-            const value = Number(layoutSettings[control.key] ?? 0);
-            return (
-              <label
-                className="slider"
-                key={control.key}
-                title={control.description}
+        {hasGraph && !spotlightOpen ? (
+          <aside
+            className={`controls-panel${
+              controlsOpen ? "" : " controls-panel--collapsed"
+            }`}
+          >
+            <div className="controls-panel__header">
+              <div className="controls-panel__title">Layout Controls</div>
+              <button
+                type="button"
+                className="controls-panel__toggle"
+                onClick={() => setControlsOpen((prev) => !prev)}
+                aria-label={
+                  controlsOpen
+                    ? "Collapse layout controls"
+                    : "Expand layout controls"
+                }
+                aria-expanded={controlsOpen}
               >
-                <div>
-                  <span>{control.label}</span>
-                  <span className="slider__value">{value.toFixed(2)}</span>
-                </div>
-                <input
-                  type="range"
-                  min={control.min}
-                  max={control.max}
-                  step={control.step}
-                  value={value}
-                  onChange={(event) =>
-                    setLayoutSettings((prev) => ({
-                      ...prev,
-                      [control.key]: Number(event.target.value),
-                    }))
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M7 10l5 5 5-5"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+            </div>
+            {controlsOpen ? (
+              <div className="controls-panel__content">
+                {layoutControls.map((control) => {
+                  if (control.type === "boolean") {
+                    const checked = Boolean(layoutSettings[control.key]);
+                    return (
+                      <label
+                        className="toggle"
+                        key={control.key}
+                        title={control.description}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(event) =>
+                            setLayoutSettings((prev) => ({
+                              ...prev,
+                              [control.key]: event.target.checked,
+                            }))
+                          }
+                        />
+                        <span>{control.label}</span>
+                      </label>
+                    );
                   }
-                />
-              </label>
-            );
-          })}
-        </aside>
+
+                  const value = Number(layoutSettings[control.key] ?? 0);
+                  return (
+                    <label
+                      className="slider"
+                      key={control.key}
+                      title={control.description}
+                    >
+                      <div>
+                        <span>{control.label}</span>
+                        <span className="slider__value">
+                          {value.toFixed(2)}
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min={control.min}
+                        max={control.max}
+                        step={control.step}
+                        value={value}
+                        onChange={(event) =>
+                          setLayoutSettings((prev) => ({
+                            ...prev,
+                            [control.key]: Number(event.target.value),
+                          }))
+                        }
+                      />
+                    </label>
+                  );
+                })}
+              </div>
+            ) : null}
+          </aside>
+        ) : null}
         {error ? <div className="error-banner">{error}</div> : null}
       </main>
     </div>
