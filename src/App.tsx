@@ -12,7 +12,7 @@ function App() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const graphRef = useRef<GraphController | null>(null);
   const hasAppliedInitialLayoutRef = useRef(false);
-  const [seed, setSeed] = useState("Graph theory");
+  const [seed, setSeed] = useState("");
   const [status, setStatus] = useState("Awaiting seed");
   const [querySource, setQuerySource] = useState<WikipediaLanguage>("en");
   const [layoutSettings, setLayoutSettings] = useState<ForceAtlas2Settings>(
@@ -22,14 +22,44 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [nodeCount, setNodeCount] = useState(0);
   const [edgeCount, setEdgeCount] = useState(0);
+  const [spotlightOpen, setSpotlightOpen] = useState(true);
   const querySourceRef = useRef<WikipediaLanguage>(querySource);
   const initialLayoutSettingsRef = useRef(layoutSettings);
+  const seedInputRef = useRef<HTMLInputElement | null>(null);
+  const prevHasGraphRef = useRef(false);
 
   const hasGraph = nodeCount > 0;
 
   useEffect(() => {
     querySourceRef.current = querySource;
   }, [querySource]);
+
+  useEffect(() => {
+    if (hasGraph && !prevHasGraphRef.current) {
+      setSpotlightOpen(false);
+    }
+    if (!hasGraph && prevHasGraphRef.current) {
+      setSpotlightOpen(true);
+    }
+    prevHasGraphRef.current = hasGraph;
+  }, [hasGraph]);
+
+  useEffect(() => {
+    if (!spotlightOpen) return;
+    const handler = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSpotlightOpen(false);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [spotlightOpen]);
+
+  useEffect(() => {
+    if (spotlightOpen) {
+      seedInputRef.current?.focus();
+    }
+  }, [spotlightOpen]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -84,6 +114,7 @@ function App() {
     setError(null);
     try {
       await graphRef.current.seed(seed.trim());
+      setSpotlightOpen(false);
     } catch (err) {
       const message =
         err instanceof Error ? err.message : "Failed to load seed";
@@ -97,6 +128,7 @@ function App() {
     setError(null);
     setNodeCount(0);
     setEdgeCount(0);
+    setSpotlightOpen(true);
   };
 
   const graphActions = [
@@ -118,39 +150,65 @@ function App() {
 
   return (
     <div className="app">
-      <header className="header">
-        <div>
-          <h1>WikiGraph</h1>
-          <span>Expand nodes to reveal the knowledge web</span>
-        </div>
-        <form className="controls" onSubmit={handleSubmit}>
-          <input
-            type="text"
-            value={seed}
-            onChange={(event) => setSeed(event.target.value)}
-            placeholder="Seed article title"
-          />
-          <select
-            value={querySource}
-            onChange={(event) =>
-              setQuerySource(event.target.value as WikipediaLanguage)
-            }
-            aria-label="Query source"
-          >
-            {WIKIPEDIA_LANGUAGES.map((language) => (
-              <option key={language.code} value={language.code}>
-                {language.label} ({language.code}.wikipedia.org)
-              </option>
-            ))}
-          </select>
-          <button type="submit" disabled={isLoading}>
-            {isLoading ? "Loading..." : "Grow Graph"}
-          </button>
-        </form>
-      </header>
       <main className="canvas">
         <div className="graph-container" ref={containerRef} />
+        {spotlightOpen ? (
+          <div
+            className="spotlight"
+            onMouseDown={(event) => {
+              if (event.currentTarget === event.target && hasGraph) {
+                setSpotlightOpen(false);
+              }
+            }}
+          >
+            <div className="spotlight__card">
+              <form className="spotlight__form" onSubmit={handleSubmit}>
+                <input
+                  ref={seedInputRef}
+                  type="text"
+                  value={seed}
+                  onChange={(event) => setSeed(event.target.value)}
+                  placeholder="Wikipedia article title e.g. Bytom or Graph theory"
+                />
+                <div className="spotlight__actions">
+                  <select
+                    value={querySource}
+                    onChange={(event) =>
+                      setQuerySource(event.target.value as WikipediaLanguage)
+                    }
+                    aria-label="Query source"
+                  >
+                    {WIKIPEDIA_LANGUAGES.map((language) => (
+                      <option key={language.code} value={language.code}>
+                        {language.label} ({language.code}.wikipedia.org)
+                      </option>
+                    ))}
+                  </select>
+                  <button type="submit" disabled={isLoading}>
+                    {isLoading ? "Loading..." : "Grow Graph"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        ) : null}
         <div className="graph-actions">
+          <button
+            type="button"
+            className="graph-actions__button graph-actions__button--icon"
+            onClick={() => setSpotlightOpen(true)}
+            aria-label="Open search"
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M15.7 15.7L20 20M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
           {graphActions.map((action) => (
             <button
               key={action.key}
