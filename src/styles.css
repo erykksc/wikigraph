@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap");
+
 :root {
   --bg: #0f1d2a;
   --panel: rgba(15, 29, 42, 0.8);
@@ -12,8 +14,6 @@
 * {
   box-sizing: border-box;
 }
-
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap");
 
 html,
 body,
