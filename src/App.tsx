@@ -1,12 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { ForceAtlas2Settings } from "graphology-layout-forceatlas2";
-import {
-  WIKIPEDIA_LANGUAGES,
-  expandTitle,
-  type WikipediaLanguage,
-} from "./api";
+import { expandTitle, type WikipediaLanguage } from "./api";
 import { GraphController } from "./graph";
 import { layoutControls, defaultLayoutSettings } from "./layout-config";
+import SpotlightBar from "./components/SpotlightBar";
 
 function App() {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -25,7 +22,6 @@ function App() {
   const [spotlightOpen, setSpotlightOpen] = useState(true);
   const querySourceRef = useRef<WikipediaLanguage>(querySource);
   const initialLayoutSettingsRef = useRef(layoutSettings);
-  const seedInputRef = useRef<HTMLInputElement | null>(null);
   const prevHasGraphRef = useRef(false);
 
   const hasGraph = nodeCount > 0;
@@ -43,23 +39,6 @@ function App() {
     }
     prevHasGraphRef.current = hasGraph;
   }, [hasGraph]);
-
-  useEffect(() => {
-    if (!spotlightOpen) return;
-    const handler = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setSpotlightOpen(false);
-      }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [spotlightOpen]);
-
-  useEffect(() => {
-    if (spotlightOpen) {
-      seedInputRef.current?.focus();
-    }
-  }, [spotlightOpen]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -152,46 +131,17 @@ function App() {
     <div className="app">
       <main className="canvas">
         <div className="graph-container" ref={containerRef} />
-        {spotlightOpen ? (
-          <div
-            className="spotlight"
-            onMouseDown={(event) => {
-              if (event.currentTarget === event.target && hasGraph) {
-                setSpotlightOpen(false);
-              }
-            }}
-          >
-            <div className="spotlight__card">
-              <form className="spotlight__form" onSubmit={handleSubmit}>
-                <input
-                  ref={seedInputRef}
-                  type="text"
-                  value={seed}
-                  onChange={(event) => setSeed(event.target.value)}
-                  placeholder="Wikipedia article title e.g. Bytom or Graph theory"
-                />
-                <div className="spotlight__actions">
-                  <select
-                    value={querySource}
-                    onChange={(event) =>
-                      setQuerySource(event.target.value as WikipediaLanguage)
-                    }
-                    aria-label="Query source"
-                  >
-                    {WIKIPEDIA_LANGUAGES.map((language) => (
-                      <option key={language.code} value={language.code}>
-                        {language.label} ({language.code}.wikipedia.org)
-                      </option>
-                    ))}
-                  </select>
-                  <button type="submit" disabled={isLoading}>
-                    {isLoading ? "Loading..." : "Grow Graph"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        ) : null}
+        <SpotlightBar
+          open={spotlightOpen}
+          hasGraph={hasGraph}
+          seed={seed}
+          querySource={querySource}
+          isLoading={isLoading}
+          onSeedChange={setSeed}
+          onQuerySourceChange={setQuerySource}
+          onSubmit={handleSubmit}
+          onRequestClose={() => setSpotlightOpen(false)}
+        />
         <div className="graph-actions">
           <button
             type="button"
