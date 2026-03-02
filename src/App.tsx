@@ -86,6 +86,32 @@ function App() {
   }, []);
 
   useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null;
+      const isEditable =
+        !!target &&
+        (target.isContentEditable ||
+          target.tagName === "INPUT" ||
+          target.tagName === "TEXTAREA" ||
+          target.tagName === "SELECT");
+
+      if (isEditable) return;
+
+      const isSlash =
+        event.key === "/" && !event.altKey && !event.metaKey && !event.ctrlKey;
+      const isCommandK =
+        event.key.toLowerCase() === "k" && (event.ctrlKey || event.metaKey);
+
+      if (isSlash || isCommandK) {
+        event.preventDefault();
+        setSpotlightOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  useEffect(() => {
     if (!graphRef.current) return;
     if (!hasAppliedInitialLayoutRef.current) {
       hasAppliedInitialLayoutRef.current = true;
