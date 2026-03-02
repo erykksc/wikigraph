@@ -1,186 +1,36 @@
-# AGENTS.md - Wikipedia Graph Developer Guide
-
-This document provides guidelines for agents working on the wikipedia-graph codebase.
+# AGENTS.md - wikigraph
 
 ## Project Overview
 
-Wikipedia Graph is a monorepo containing:
+- Name: `wikipedia-graph`
+- Type: client-only React + TypeScript app (Vite)
+- Purpose: interactive Wikipedia graph explorer that expands nodes by querying Wikipedia directly from the browser
 
-- **client/**: React 19 + Vite frontend (ESM)
-- **server/**: Fastify + TypeScript backend (Node.js)
-- **shared/**: Shared TypeScript types
+## Structure
 
-## Build, Run & Test Commands
+- Root app
+  - `package.json` - scripts and dependencies
+  - `src/App.tsx` - app shell, controls, and orchestration
+  - `src/graph.ts` - Sigma/Graphology controller and interactions
+  - `src/api/` - Wikipedia fetch logic
+  - `src/types.ts` - shared client data types
+  - `Dockerfile` - builds and serves static client via Caddy
+  - `docker-compose.yml` - deploys static app behind Traefik
+  - `mise.toml` - local tooling/tasks
 
-### Development
+## Development
+
+From repo root:
 
 ```bash
-# Run all packages concurrently (requires Redis-compatible storage running)
+npm install
 npm run dev
-
-# Run server only
-cd server && npm run dev        # Uses tsx watch
-
-# Run client only
-cd client && npm run dev        # Uses Vite dev server
+npm run build
+npm run lint
 ```
 
-### Building
+## Runtime Notes
 
-```bash
-# Build client (TypeScript + Vite)
-cd client && npm run build
-
-# Server runs with tsx (no build step needed)
-cd server && npm run start
-```
-
-### Linting & Type Checking
-
-```bash
-# Client linting (ESLint)
-cd client && npm run lint
-
-# TypeScript type checking (no automatic command - use editor or manual tsc)
-cd client && npx tsc --noEmit
-cd server && npx tsc --noEmit
-```
-
-### Running Tests
-
-**No test framework is currently configured.** To add tests:
-
-- Server: Consider adding Vitest or node:test
-- Client: Already has eslint-plugin-react-hooks for React testing
-
-If you add Vitest, example commands:
-
-```bash
-# Run all tests
-npm test
-
-# Run a single test file
-npx vitest run src/some-test.ts
-
-# Run tests matching a pattern
-npx vitest run -t "some test name"
-
-# Run tests in watch mode
-npx vitest
-```
-
-### Infrastructure
-
-```bash
-# Run Redis-compatible storage (KeyDB) via mise
-mise run keydb
-
-# Or manually:
-docker run --rm -it -p 6379:6379 --name keydb eqalpha/keydb:latest
-```
-
-Environment variables:
-
-- `REDIS_URL`: Redis-compatible storage connection string (default: `redis://localhost:6379`)
-- `PORT`: Server port (default: 3000)
-- `HOST`: Server host (default: `localhost`)
-- `VITE_API_BASE`: Client API base URL (default: `http://localhost:3000`)
-
-## Code Style Guidelines
-
-### TypeScript
-
-- Use strict TypeScript (`strict: true` in tsconfig)
-- Enable `noUnusedLocals` and `noUnusedParameters`
-- Use explicit return types for exported functions
-- Use type inference for local variables
-
-### Import Conventions
-
-**Server (Node.js with ESM):**
-
-- Include `.js` extension in relative imports: `import { foo } from './foo.js'`
-- Use bare imports for packages: `import fastify from 'fastify'`
-
-**Client (Vite/ESM):**
-
-- Omit file extensions: `import { foo } from './foo'`
-- Use `import type` for type-only imports
-
-**Shared types:**
-
-- Import from `@wikipedia-graph/shared`
-
-### Naming Conventions
-
-- **Files**: kebab-case (`cache.ts`, `graph-controller.ts`)
-- **Components**: PascalCase (`App.tsx`, `GraphController.ts`)
-- **Functions/variables**: camelCase
-- **Types/interfaces**: PascalCase with `Type` suffix for type aliases, or noun for interfaces
-- **Constants**: UPPER_SNAKE_CASE for true constants, camelCase otherwise
-
-### React Patterns
-
-- Use function components with hooks
-- Use default exports for components: `export default App`
-- Use named exports for utilities/hooks
-- Follow React 19 patterns (no need for `use` keyword unless using promises)
-- Use `useMemo` for expensive computations
-- Use `useRef` for mutable refs
-- Handle errors with try/catch in event handlers
-
-### Error Handling
-
-- Server: Use try/catch with `request.log.error()` for logging
-- Server: Return appropriate HTTP status codes (400, 404, 500)
-- Client: Display errors to users via UI, log to console
-- Validate inputs with Zod schemas (server)
-
-- Server: Use single quotes for strings
-- Client JSX: Use double quotes for attributes, single quotes elsewhere
-- Use semicolons
-- Use Prettier if available (not currently configured)
-
-### Package Management
-
-- This is a npm workspace monorepo
-- Add dependencies to appropriate package's `package.json`
-- Use `file:../shared` for local shared package
-
-### API Design
-
-- RESTful endpoints
-- Use query parameters for GET requests
-- Return JSON responses
-- Use Zod for request validation
-
-## Architecture Notes
-
-### Data Flow
-
-1. User enters a seed article title in the client
-2. Client calls `/expand` endpoint with the title
-3. Server fetches inlinks/outlinks from Wikipedia API
-4. Server returns `{ newNodes: string[], newEdges: {fromNode, targetNode}[] }`
-5. Server caches results in Redis-compatible storage (1 day TTL)
-6. Client renders/updates graph with Sigma.js
-
-### API Response Format
-
-```typescript
-type ExpandEdge = { fromNode: string; targetNode: string };
-type ExpandResponse = {
-  newNodes: string[]; // Center node + all outlinks
-  newEdges: ExpandEdge[]; // Bidirectional edges to outlinks and inlinks
-};
-```
-
-### Key Files
-
-- `server/src/server.ts`: Fastify server setup and routes
-- `server/src/wiki.ts`: Wikipedia API integration (outlinks from pages[].links, inlinks from backlinks)
-- `server/src/cache.ts`: Redis-compatible caching layer
-- `client/src/App.tsx`: Main React component
-- `client/src/graph.ts`: Sigma.js graph controller - handles node/edge deduplication
-- `client/src/api.ts`: API client calling `/expand` endpoint
-- `shared/src/types.ts`: Shared TypeScript types
+- No backend service is required.
+- All expansion requests go from browser to `https://<lang>.wikipedia.org/w/api.php`.
+- Ensure CSP/network policy allows outbound requests to Wikipedia APIs when deployed.

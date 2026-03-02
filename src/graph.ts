@@ -2,7 +2,7 @@ import Graph from "graphology";
 import Sigma from "sigma";
 import FA2 from "graphology-layout-forceatlas2/worker";
 import type { ForceAtlas2Settings } from "graphology-layout-forceatlas2";
-import type { ExpandEdge, ExpandResponse } from "@wikipedia-graph/shared";
+import type { ExpandEdge, ExpandResponse } from "./types";
 import { defaultLayoutSettings } from "./layout-config";
 
 const drawLabelWithBackground = (

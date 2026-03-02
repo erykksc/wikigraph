@@ -3,11 +3,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    environment:
-      - PORT=80
-      - REDIS_URL=redis://keydb:6379
-    depends_on:
-      - keydb
     labels:
       - traefik.enable=true
 
@@ -24,31 +19,6 @@ services:
       - traefik.http.routers.wikigraph.tls=true
       - traefik.http.routers.wikigraph.tls.certresolver=letsencrypt
       - traefik.http.services.wikigraph.loadbalancer.server.port=80
-
-      - traefik.http.routers.wikigraph-expand.rule=Host(`wikigraph.eryk.one`) && Path(`/api/expand`)
-      - traefik.http.routers.wikigraph-expand.entrypoints=websecure
-      - traefik.http.routers.wikigraph-expand.tls=true
-      - traefik.http.routers.wikigraph-expand.tls.certresolver=letsencrypt
-      - traefik.http.routers.wikigraph-expand.priority=100
-      - traefik.http.routers.wikigraph-expand.service=wikigraph
-      - traefik.http.routers.wikigraph-expand.middlewares=wikigraph-expand-ratelimit
-
-      - traefik.http.middlewares.wikigraph-expand-ratelimit.ratelimit.average=8
-      - traefik.http.middlewares.wikigraph-expand-ratelimit.ratelimit.period=10s
-      - traefik.http.middlewares.wikigraph-expand-ratelimit.ratelimit.burst=5
-    networks:
-      - dokploy-network
-    restart: unless-stopped
-
-  keydb:
-    image: eqalpha/keydb:latest
-    command: >-
-      keydb-server /etc/keydb/keydb.conf
-      --storage-provider flash /data
-      --maxmemory 100mb
-      --maxmemory-policy allkeys-lfu
-    volumes:
-      - keydb-data:/data
     networks:
       - dokploy-network
     restart: unless-stopped
@@ -56,6 +26,3 @@ services:
 networks:
   dokploy-network:
     external: true
-
-volumes:
-  keydb-data:

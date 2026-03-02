@@ -1,4 +1,4 @@
-import type { ExpandResponse } from "@wikipedia-graph/shared";
+import type { ExpandResponse } from "../types";
 
 export const WIKIPEDIA_LANGUAGES = [
   { code: "en", label: "English" },

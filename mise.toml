@@ -1,55 +1,11 @@
 [tools]
 node = "latest"
-redis = "latest"
-
-[env]
-REDIS_URL = "redis://localhost:6379"
-REDIS_HOST = "localhost"
-REDIS_PORT = "6379"
-REDIS_USERNAME = ""
-REDIS_PASSWORD = ""
-REDIS_DB = "0"
-WIKIDUMP_PAGE_SQL = "/home/erykksc/wikipedia/enwiki-latest-page.sql"
-WIKIDUMP_PAGELINKS_SQL = "/home/erykksc/wikipedia/enwiki-latest-pagelinks.sql"
-WIKIDUMP_LINKTARGET_SQL = "/home/erykksc/wikipedia/enwiki-latest-linktarget.sql"
-WIKIDUMP_NAMESPACE = "0"
-WIKIDUMP_BATCH_SIZE = "1000"
-
-[tasks.keydb]
-description = "Run KeyDB in Docker (flash tiering, 1GB RAM cache)"
-run = """
-docker run --rm -it \
-  -p 6379:6379 \
-  -v $(pwd)/.keydb-data:/data:Z \
-  --name keydb \
-  eqalpha/keydb:latest \
-  keydb-server /etc/keydb/keydb.conf \
-    --storage-provider flash /data \
-    --maxmemory 12G \
-    --maxmemory-policy allkeys-lfu
-"""
-
-[tasks.redis-import]
-description = "Import wikidump tables into Redis"
-run = """
-cargo run --release --manifest-path wikidump-importer/Cargo.toml -- redis \
-  --page "$WIKIDUMP_PAGE_SQL" \
-  --pagelinks "$WIKIDUMP_PAGELINKS_SQL" \
-  --linktarget "$WIKIDUMP_LINKTARGET_SQL" \
-  --namespace "$WIKIDUMP_NAMESPACE" \
-  --batch-size "$WIKIDUMP_BATCH_SIZE" \
-  --redis-url "$REDIS_URL"
-"""
 
 [tasks.docker]
 run = """
 docker build -t wikigraph-app:local .
 docker run --rm -it \
   --name wikigraph-app \
-  -p 3000:3000 \
-  --add-host=host.docker.internal:host-gateway \
-  -e HOST=0.0.0.0 \
-  -e PORT=3000 \
-  -e REDIS_URL=redis://host.docker.internal:6379 \
+  -p 3000:80 \
   wikigraph-app:local
 """

@@ -3,32 +3,23 @@ FROM node:24-alpine AS build
 WORKDIR /app
 
 COPY package.json package-lock.json ./
-COPY shared/package.json shared/package.json
-COPY client/package.json client/package.json
-COPY server/package.json server/package.json
 
 RUN npm ci
 
-COPY shared ./shared
-COPY client ./client
-COPY server ./server
+COPY src ./src
+COPY public ./public
+COPY index.html ./index.html
+COPY vite.config.ts ./vite.config.ts
+COPY eslint.config.js ./eslint.config.js
+COPY tsconfig.json ./tsconfig.json
+COPY tsconfig.app.json ./tsconfig.app.json
+COPY tsconfig.node.json ./tsconfig.node.json
 
-RUN npm --prefix client run build
+RUN npm run build
 
-FROM node:24-alpine AS runtime
+FROM caddy:2-alpine AS runtime
 
-WORKDIR /app
-ENV NODE_ENV=production
-ENV HOST=0.0.0.0
-ENV PORT=80
-
-COPY --from=build /app/package.json ./package.json
-COPY --from=build /app/package-lock.json ./package-lock.json
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/shared ./shared
-COPY --from=build /app/server ./server
-COPY --from=build /app/client/dist ./client/dist
+COPY --from=build /app/dist /srv
+COPY Caddyfile /etc/caddy/Caddyfile
 
 EXPOSE 80
-
-CMD ["npm", "--prefix", "server", "run", "start"]
