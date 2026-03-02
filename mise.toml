@@ -3,9 +3,9 @@ node = "latest"
 
 [tasks.docker]
 run = """
-docker build -t wikigraph-app:local .
+docker build -t wikigraph:latest .
 docker run --rm -it \
   --name wikigraph-app \
   -p 3000:80 \
-  wikigraph-app:local
+  wikigraph:latest
 """
