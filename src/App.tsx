@@ -33,9 +33,9 @@ function App() {
 
   useEffect(() => {
     if (!containerRef.current) return;
-      graphRef.current = new GraphController({
-        container: containerRef.current,
-        initialLayoutSettings: initialLayoutSettingsRef.current,
+    graphRef.current = new GraphController({
+      container: containerRef.current,
+      initialLayoutSettings: initialLayoutSettingsRef.current,
       onExpand: async (title) => {
         setIsLoading(true);
         setError(null);
@@ -99,11 +99,28 @@ function App() {
     setEdgeCount(0);
   };
 
+  const graphActions = [
+    {
+      key: "fit",
+      label: "Fit View",
+      ariaLabel: "Fit graph to view",
+      onClick: () => graphRef.current?.fitToGraph(),
+      disabled: !hasGraph,
+    },
+    {
+      key: "reset",
+      label: "Reset",
+      ariaLabel: "Reset graph",
+      onClick: handleReset,
+      disabled: !hasGraph,
+    },
+  ];
+
   return (
     <div className="app">
       <header className="header">
         <div>
-          <h1>Wikipedia Graph Explorer</h1>
+          <h1>WikiGraph</h1>
           <span>Expand nodes to reveal the knowledge web</span>
         </div>
         <form className="controls" onSubmit={handleSubmit}>
@@ -129,26 +146,41 @@ function App() {
           <button type="submit" disabled={isLoading}>
             {isLoading ? "Loading..." : "Grow Graph"}
           </button>
-          <button
-            type="button"
-            onClick={() => graphRef.current?.fitToGraph()}
-            disabled={!hasGraph}
-          >
-            Fit View
-          </button>
-          <button type="button" onClick={handleReset} disabled={!hasGraph}>
-            Reset
-          </button>
         </form>
       </header>
       <main className="canvas">
         <div className="graph-container" ref={containerRef} />
+        <div className="graph-actions">
+          {graphActions.map((action) => (
+            <button
+              key={action.key}
+              type="button"
+              className="graph-actions__button"
+              onClick={action.onClick}
+              aria-label={action.ariaLabel}
+              disabled={action.disabled}
+            >
+              {action.label}
+            </button>
+          ))}
+        </div>
         <div className="status">
           <strong>Status</strong> · {status}
         </div>
-        <div className="node-count">
-          <div>Nodes: {nodeCount}</div>
-          <div>Edges: {edgeCount}</div>
+        <div className="info-stack">
+          <div className="node-count">
+            <div>Nodes: {nodeCount}</div>
+            <div>Edges: {edgeCount}</div>
+          </div>
+          <div className="credit">
+            <a
+              href="https://github.com/erykksc"
+              target="_blank"
+              rel="noreferrer"
+            >
+              Created by Eryk Kściuczyk
+            </a>
+          </div>
         </div>
         <aside className="controls-panel">
           <div className="controls-panel__title">Layout Controls</div>
