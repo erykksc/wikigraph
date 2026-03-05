@@ -1,4 +1,5 @@
 import type { ExpandResponse } from "../types";
+import { getLocalStorageJson, setLocalStorageJson } from "./cache";
 
 export const WIKIPEDIA_LANGUAGES = [
   { code: "en", label: "English", flag: "🇬🇧" },
@@ -13,6 +14,16 @@ export const WIKIPEDIA_LANGUAGES = [
 ] as const;
 
 export type WikipediaLanguage = (typeof WIKIPEDIA_LANGUAGES)[number]["code"];
+
+const CACHE_PREFIX = "wg:cache:";
+const RESOLVE_TITLE_CACHE_PREFIX = `${CACHE_PREFIX}resolve-title:v1:`;
+const EXPAND_CACHE_PREFIX = `${CACHE_PREFIX}expand:v1:`;
+
+const cacheKeyForTitle = (
+  prefix: string,
+  language: WikipediaLanguage,
+  title: string,
+) => `${prefix}${language}:${encodeURIComponent(title)}`;
 
 type WikiPage = {
   pageid?: number;
@@ -116,6 +127,16 @@ const resolveTitle = async (
   title: string,
   language: WikipediaLanguage,
 ): Promise<string> => {
+  const resolveKey = cacheKeyForTitle(
+    RESOLVE_TITLE_CACHE_PREFIX,
+    language,
+    title.trim(),
+  );
+  const cached = getLocalStorageJson<string>(resolveKey);
+  if (cached) {
+    return cached;
+  }
+
   const res = await fetchWikiJson(language, {
     action: "query",
     titles: title,
@@ -126,6 +147,7 @@ const resolveTitle = async (
     throw new Error("Wikipedia article not found");
   }
 
+  setLocalStorageJson(resolveKey, page.title);
   return page.title;
 };
 
@@ -134,6 +156,16 @@ export const expandTitleFromWikipedia = async (
   language: WikipediaLanguage,
 ): Promise<ExpandResponse> => {
   const normalizedTitle = await resolveTitle(title, language);
+
+  const expandKey = cacheKeyForTitle(
+    EXPAND_CACHE_PREFIX,
+    language,
+    normalizedTitle,
+  );
+  const cached = getLocalStorageJson<ExpandResponse>(expandKey);
+  if (cached) {
+    return cached;
+  }
 
   let plcontinue: string | undefined;
   const outLinks: Array<{ srcTitle: string; targetTitle: string }> = [];
@@ -149,11 +181,14 @@ export const expandTitleFromWikipedia = async (
     uniqueTargets.add(edge.targetTitle);
   });
 
-  return {
+  const payload: ExpandResponse = {
     newNodes: [normalizedTitle, ...uniqueTargets],
     newEdges: outLinks.map((edge) => ({
       fromNode: edge.srcTitle,
       targetNode: edge.targetTitle,
     })),
   };
+
+  setLocalStorageJson(expandKey, payload);
+  return payload;
 };
