@@ -158,7 +158,6 @@ function App() {
             ...current,
             slowDown: PAUSED_SLOWDOWN,
           }));
-          setControlsOpen(false);
           return true;
         });
         return;
@@ -192,7 +191,7 @@ function App() {
         !event.ctrlKey
       ) {
         event.preventDefault();
-        if (hasGraph && !isPaused && !spotlightOpen) {
+        if (hasGraph && !spotlightOpen) {
           setControlsOpen(true);
         }
       }
@@ -259,7 +258,6 @@ function App() {
         ...current,
         slowDown: PAUSED_SLOWDOWN,
       }));
-      setControlsOpen(false);
       return true;
     });
   };
@@ -383,20 +381,32 @@ function App() {
                 type="button"
                 className="controls-panel__toggle controls-panel__toggle--settings"
                 onClick={() => setControlsOpen((prev) => !prev)}
-                title={"Show the graph layout controls\n\nshortcut: ,"}
+                title={
+                  controlsOpen
+                    ? "Hide the graph layout controls\n\nshortcut: ,"
+                    : "Show the graph layout controls\n\nshortcut: ,"
+                }
                 aria-label={
                   controlsOpen
                     ? "Close graph layout settings"
                     : "Open graph layout settings"
                 }
                 aria-expanded={controlsOpen}
-                disabled={isPaused}
               >
                 <img src="/cog.svg" alt="" aria-hidden="true" />
               </button>
             </div>
             {controlsOpen ? (
-              <div className="controls-panel__content">
+              <div
+                className={`controls-panel__content${
+                  isPaused ? " controls-panel__content--disabled" : ""
+                }`}
+              >
+                {isPaused ? (
+                  <div className="controls-panel__hint" role="status">
+                    Resume layout to edit settings.
+                  </div>
+                ) : null}
                 {layoutControls.map((control) => {
                   if (control.type === "boolean") {
                     const checked = Boolean(layoutSettings[control.key]);
@@ -409,6 +419,7 @@ function App() {
                         <input
                           type="checkbox"
                           checked={checked}
+                          disabled={isPaused}
                           onChange={(event) =>
                             setLayoutSettings((prev) => ({
                               ...prev,
@@ -440,6 +451,7 @@ function App() {
                         max={control.max}
                         step={control.step}
                         value={value}
+                        disabled={isPaused}
                         onChange={(event) =>
                           setLayoutSettings((prev) => ({
                             ...prev,
@@ -456,6 +468,7 @@ function App() {
                   onClick={handleResetLayoutSettings}
                   aria-label="Reset layout settings to default"
                   title="Restore the layout controls to their default values"
+                  disabled={isPaused}
                 >
                   <span>Reset to default</span>
                   <img src="/reset.svg" alt="" aria-hidden="true" />

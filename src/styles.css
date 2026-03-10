@@ -376,8 +376,8 @@ body,
 
 .controls-panel {
   position: absolute;
-  top: 1.5rem;
-  right: 1.5rem;
+  top: max(1rem, env(safe-area-inset-top));
+  right: max(1rem, env(safe-area-inset-right));
   width: 260px;
   padding: 1rem;
   background: var(--panel);
@@ -388,6 +388,7 @@ body,
   display: flex;
   flex-direction: column;
   gap: 0.7rem;
+  z-index: 4;
 }
 
 .controls-panel--collapsed {
@@ -414,6 +415,20 @@ body,
   display: flex;
   flex-direction: column;
   gap: 0.7rem;
+}
+
+.controls-panel__content--disabled {
+  opacity: 0.82;
+}
+
+.controls-panel__hint {
+  padding: 0.65rem 0.8rem;
+  border: 1px solid rgba(86, 204, 242, 0.22);
+  border-radius: 10px;
+  background: rgba(10, 18, 28, 0.5);
+  color: var(--muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
 }
 
 .controls-panel__reset {
@@ -457,6 +472,12 @@ body,
 .controls-panel__reset:focus-visible {
   outline: 2px solid rgba(86, 204, 242, 0.7);
   outline-offset: 2px;
+}
+
+.controls-panel__reset:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .controls-panel__toggle {
@@ -562,8 +583,25 @@ body,
   width: 100%;
 }
 
+.slider input[type="range"]:disabled,
+.toggle input:disabled {
+  cursor: not-allowed;
+}
+
 .status strong {
   color: var(--text);
+}
+
+@media (min-width: 801px) and (max-width: 1120px) {
+  .controls-panel:not(.controls-panel--collapsed) {
+    top: 50%;
+    right: auto;
+    left: 50%;
+    width: min(360px, calc(100vw - 3rem));
+    max-height: min(75vh, 640px);
+    transform: translate(-50%, -50%);
+    overflow-y: auto;
+  }
 }
 
 @media (max-width: 800px) {
@@ -587,14 +625,12 @@ body,
   }
 
   .controls-panel {
-    position: static;
-    width: 100%;
-    margin: 0 1.5rem 1.5rem;
+    width: min(280px, calc(100vw - 2rem));
+    max-width: calc(100vw - 2rem);
   }
 
   .controls-panel--collapsed {
     width: auto;
-    margin-left: auto;
   }
 
   .controls-panel__reset {
