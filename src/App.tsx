@@ -7,19 +7,22 @@ import SpotlightBar from "./components/SpotlightBar";
 import CircularButton from "./components/CircularButton";
 
 const PAUSED_SLOWDOWN = 1000;
+const STATUS_FADE_DURATION_MS = 3000;
 
 function App() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const graphRef = useRef<GraphController | null>(null);
   const hasAppliedInitialLayoutRef = useRef(false);
   const [seed, setSeed] = useState("");
-  const [status, setStatus] = useState("Awaiting seed");
+  const [status, setStatus] = useState("");
   const [querySource, setQuerySource] = useState<WikipediaLanguage>("en");
   const [layoutSettings, setLayoutSettings] = useState<ForceAtlas2Settings>(
     defaultLayoutSettings,
   );
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [statusVisible, setStatusVisible] = useState(false);
+  const [statusFading, setStatusFading] = useState(false);
   const [nodeCount, setNodeCount] = useState(0);
   const [edgeCount, setEdgeCount] = useState(0);
   const [spotlightOpen, setSpotlightOpen] = useState(true);
@@ -29,12 +32,46 @@ function App() {
   const initialLayoutSettingsRef = useRef(layoutSettings);
   const prevHasGraphRef = useRef(false);
   const slowdownBeforePauseRef = useRef(defaultLayoutSettings.slowDown);
+  const statusTimeoutRef = useRef<number | null>(null);
 
   const hasGraph = nodeCount > 0;
+
+  const showStatus = (message: string, nextError: string | null = null) => {
+    if (statusTimeoutRef.current !== null) {
+      window.clearTimeout(statusTimeoutRef.current);
+      statusTimeoutRef.current = null;
+    }
+    setStatus(message);
+    setError(nextError);
+    setStatusFading(false);
+    setStatusVisible(true);
+  };
+
+  const fadeStatus = () => {
+    if (statusTimeoutRef.current !== null) {
+      window.clearTimeout(statusTimeoutRef.current);
+    }
+    setStatusFading(true);
+    statusTimeoutRef.current = window.setTimeout(() => {
+      setStatusVisible(false);
+      setStatusFading(false);
+      setStatus("");
+      setError(null);
+      statusTimeoutRef.current = null;
+    }, STATUS_FADE_DURATION_MS);
+  };
 
   useEffect(() => {
     querySourceRef.current = querySource;
   }, [querySource]);
+
+  useEffect(() => {
+    return () => {
+      if (statusTimeoutRef.current !== null) {
+        window.clearTimeout(statusTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (hasGraph && !prevHasGraphRef.current) {
@@ -59,18 +96,18 @@ function App() {
       initialLayoutSettings: initialLayoutSettingsRef.current,
       onExpand: async (title) => {
         setIsLoading(true);
-        setError(null);
-        setStatus(`Expanding ${title}`);
+        showStatus(`Expanding ${title}`);
         try {
           const source = querySourceRef.current;
           const payload = await expandTitle(title, source);
-          setStatus(`Expanded ${title}`);
+          showStatus(`Expanded ${title}`);
+          fadeStatus();
           return payload;
         } catch (err) {
           const message =
             err instanceof Error ? err.message : "Expansion failed";
-          setError(message);
-          setStatus("Expansion failed");
+          showStatus(message, message);
+          fadeStatus();
           throw err;
         } finally {
           setIsLoading(false);
@@ -167,8 +204,14 @@ function App() {
 
   const handleReset = () => {
     graphRef.current?.reset();
-    setStatus("Awaiting seed");
+    if (statusTimeoutRef.current !== null) {
+      window.clearTimeout(statusTimeoutRef.current);
+      statusTimeoutRef.current = null;
+    }
+    setStatus("");
     setError(null);
+    setStatusVisible(false);
+    setStatusFading(false);
     setNodeCount(0);
     setEdgeCount(0);
     setSpotlightOpen(true);
@@ -249,7 +292,12 @@ function App() {
                 disabled={!hasGraph}
               />
             </div>
-            <div className={`status${error ? " status--error" : ""}`}>
+            <div
+              className={`status${error ? " status--error" : ""}${
+                statusVisible ? " status--visible" : ""
+              }${statusFading ? " status--fading" : ""}`}
+              aria-hidden={!statusVisible}
+            >
               <strong>{error ? "Error" : "Status"}</strong> · {error ?? status}
             </div>
             <div className="info-stack">
