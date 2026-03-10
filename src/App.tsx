@@ -12,6 +12,7 @@ const CENTERED_CONTROLS_MEDIA_QUERY =
   "(min-width: 801px) and (max-width: 1120px)";
 
 function App() {
+  const assetBaseUrl = import.meta.env.BASE_URL;
   const containerRef = useRef<HTMLDivElement | null>(null);
   const controlsPanelRef = useRef<HTMLElement | null>(null);
   const graphRef = useRef<GraphController | null>(null);
@@ -431,7 +432,7 @@ function App() {
                 aria-pressed={isPaused}
               >
                 <img
-                  src={isPaused ? "/play.svg" : "/pause.svg"}
+                  src={`${assetBaseUrl}${isPaused ? "play.svg" : "pause.svg"}`}
                   alt=""
                   aria-hidden="true"
                 />
@@ -452,7 +453,7 @@ function App() {
                 }
                 aria-expanded={controlsOpen}
               >
-                <img src="/cog.svg" alt="" aria-hidden="true" />
+                <img src={`${assetBaseUrl}cog.svg`} alt="" aria-hidden="true" />
               </button>
             </div>
             {controlsOpen ? (
@@ -530,7 +531,11 @@ function App() {
                   disabled={isPaused}
                 >
                   <span>Reset to default</span>
-                  <img src="/reset.svg" alt="" aria-hidden="true" />
+                  <img
+                    src={`${assetBaseUrl}reset.svg`}
+                    alt=""
+                    aria-hidden="true"
+                  />
                 </button>
               </div>
             ) : null}
