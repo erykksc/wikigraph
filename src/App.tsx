@@ -172,11 +172,34 @@ function App() {
       if (isSlash || isCommandK) {
         event.preventDefault();
         setSpotlightOpen(true);
+        return;
+      }
+
+      const key = event.key.toLowerCase();
+
+      if (key === "f" && !event.altKey && !event.metaKey && !event.ctrlKey) {
+        event.preventDefault();
+        if (hasGraph) {
+          graphRef.current?.fitToGraph();
+        }
+        return;
+      }
+
+      if (
+        event.key === "," &&
+        !event.altKey &&
+        !event.metaKey &&
+        !event.ctrlKey
+      ) {
+        event.preventDefault();
+        if (hasGraph && !isPaused && !spotlightOpen) {
+          setControlsOpen(true);
+        }
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [layoutSettings.slowDown]);
+  }, [hasGraph, isPaused, layoutSettings.slowDown, spotlightOpen]);
 
   useEffect(() => {
     if (!graphRef.current) return;
@@ -268,6 +291,7 @@ function App() {
                 className="graph-actions__button--icon"
                 onClick={() => setSpotlightOpen(true)}
                 ariaLabel="Open search"
+                title="shortcut: / or cmd/ctrl+k"
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path
@@ -283,6 +307,7 @@ function App() {
                 text="Fit View"
                 onClick={() => graphRef.current?.fitToGraph()}
                 ariaLabel="Fit graph to view"
+                title="shortcut: f"
                 disabled={!hasGraph}
               />
               <CircularButton
@@ -348,6 +373,7 @@ function App() {
                 type="button"
                 className="controls-panel__toggle controls-panel__toggle--settings"
                 onClick={() => setControlsOpen((prev) => !prev)}
+                title="shortcut: ,"
                 aria-label={
                   controlsOpen
                     ? "Close graph layout settings"

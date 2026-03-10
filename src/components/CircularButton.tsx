@@ -6,6 +6,7 @@ type CircularButtonProps = {
   text: string;
   onClick: () => void;
   ariaLabel?: string;
+  title?: string;
   disabled?: boolean;
   className?: string;
   children?: ReactNode;
@@ -17,6 +18,7 @@ const CircularButton = ({
   text,
   onClick,
   ariaLabel,
+  title,
   disabled = false,
   className,
   children,
@@ -27,6 +29,7 @@ const CircularButton = ({
       className={`graph-actions__button${className ? ` ${className}` : ""}`}
       onClick={onClick}
       aria-label={ariaLabel}
+      title={title}
       disabled={disabled}
       style={{ background: backgroundColor, color: textColor }}
     >
