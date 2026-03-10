@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700&display=swap");
 
 :root {
   --bg: #0f1d2a;
@@ -22,7 +22,7 @@ body,
   height: 100%;
   margin: 0;
   overflow: hidden;
-  font-family: "Space Grotesk", "Futura", "Trebuchet MS", sans-serif;
+  font-family: "Noto Sans", "Trebuchet MS", sans-serif;
   background:
     radial-gradient(circle at 20% 20%, #1b2c3f 0%, transparent 45%),
     radial-gradient(circle at 80% 10%, #132438 0%, transparent 50%),
@@ -364,7 +364,6 @@ body,
 
 .credit {
   color: var(--muted);
-  font-size: 0.8rem;
 }
 
 .credit a {
@@ -706,5 +705,9 @@ body,
     bottom: max(0.75rem, env(safe-area-inset-bottom));
     width: min(calc(100vw - 1.5rem), 320px);
     transform: none;
+  }
+
+  .credit {
+    font-size: 0.85rem;
   }
 }
