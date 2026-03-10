@@ -133,7 +133,7 @@ body,
 
 .status {
   position: absolute;
-  right: 1.5rem;
+  left: 1.5rem;
   bottom: 1.5rem;
   padding: 0.7rem 1rem;
   background: var(--panel);
@@ -144,10 +144,16 @@ body,
   box-shadow: 0 12px 24px -20px var(--shadow);
 }
 
+.status--error {
+  background: rgba(60, 20, 30, 0.9);
+  border-color: rgba(255, 180, 180, 0.4);
+  color: #ffd6d6;
+}
+
 .graph-actions {
   position: absolute;
   right: 1.5rem;
-  bottom: calc(1.5rem + 4.6rem);
+  bottom: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
@@ -312,7 +318,7 @@ body,
 .info-stack {
   position: absolute;
   left: 1.5rem;
-  bottom: 1.5rem;
+  top: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
@@ -525,19 +531,6 @@ body,
   color: var(--text);
 }
 
-.error-banner {
-  position: absolute;
-  left: 1.5rem;
-  bottom: 1.5rem;
-  padding: 0.75rem 1rem;
-  background: rgba(60, 20, 30, 0.9);
-  border: 1px solid rgba(255, 180, 180, 0.4);
-  border-radius: 12px;
-  color: #ffd6d6;
-  font-size: 0.85rem;
-  max-width: 320px;
-}
-
 @media (max-width: 800px) {
   .header {
     flex-direction: column;
@@ -619,6 +612,6 @@ body,
   }
 
   .graph-actions {
-    bottom: calc(1.5rem + 4.1rem);
+    bottom: 1.5rem;
   }
 }

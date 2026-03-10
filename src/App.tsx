@@ -154,7 +154,7 @@ function App() {
       <main className="canvas">
         <div className="graph-container" ref={containerRef} />
         <SpotlightBar
-          open={spotlightOpen}
+          open={!hasGraph || spotlightOpen}
           hasGraph={hasGraph}
           seed={seed}
           querySource={querySource}
@@ -162,56 +162,64 @@ function App() {
           onSeedChange={setSeed}
           onQuerySourceChange={setQuerySource}
           onSubmit={handleSubmit}
-          onRequestClose={() => setSpotlightOpen(false)}
+          onRequestClose={() => {
+            if (hasGraph) {
+              setSpotlightOpen(false);
+            }
+          }}
         />
-        <div className="graph-actions">
-          <CircularButton
-            text="Search"
-            className="graph-actions__button--icon"
-            onClick={() => setSpotlightOpen(true)}
-            ariaLabel="Open search"
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M15.7 15.7L20 20M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
+        {hasGraph ? (
+          <>
+            <div className="graph-actions">
+              <CircularButton
+                text="Search"
+                className="graph-actions__button--icon"
+                onClick={() => setSpotlightOpen(true)}
+                ariaLabel="Open search"
+              >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                  <path
+                    d="M15.7 15.7L20 20M11 18a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+              </CircularButton>
+              <CircularButton
+                text="Fit View"
+                onClick={() => graphRef.current?.fitToGraph()}
+                ariaLabel="Fit graph to view"
+                disabled={!hasGraph}
               />
-            </svg>
-          </CircularButton>
-          <CircularButton
-            text="Fit View"
-            onClick={() => graphRef.current?.fitToGraph()}
-            ariaLabel="Fit graph to view"
-            disabled={!hasGraph}
-          />
-          <CircularButton
-            text="Reset"
-            onClick={handleReset}
-            ariaLabel="Reset graph"
-            disabled={!hasGraph}
-          />
-        </div>
-        <div className="status">
-          <strong>Status</strong> · {status}
-        </div>
-        <div className="info-stack">
-          <div className="node-count">
-            <div>Nodes: {nodeCount}</div>
-            <div>Edges: {edgeCount}</div>
-          </div>
-          <div className="credit">
-            <a
-              href="https://github.com/erykksc"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Created by Eryk Kściuczyk
-            </a>
-          </div>
-        </div>
+              <CircularButton
+                text="Reset"
+                onClick={handleReset}
+                ariaLabel="Reset graph"
+                disabled={!hasGraph}
+              />
+            </div>
+            <div className={`status${error ? " status--error" : ""}`}>
+              <strong>{error ? "Error" : "Status"}</strong> · {error ?? status}
+            </div>
+            <div className="info-stack">
+              <div className="node-count">
+                <div>Nodes: {nodeCount}</div>
+                <div>Edges: {edgeCount}</div>
+              </div>
+              <div className="credit">
+                <a
+                  href="https://github.com/erykksc"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Created by Eryk Kściuczyk
+                </a>
+              </div>
+            </div>
+          </>
+        ) : null}
         {hasGraph && !spotlightOpen ? (
           <aside
             className={`controls-panel${
@@ -306,7 +314,6 @@ function App() {
             ) : null}
           </aside>
         ) : null}
-        {error ? <div className="error-banner">{error}</div> : null}
       </main>
     </div>
   );
