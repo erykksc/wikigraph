@@ -4,6 +4,7 @@ import { expandTitle, type WikipediaLanguage } from "./api";
 import { GraphController } from "./graph";
 import { layoutControls, defaultLayoutSettings } from "./layout-config";
 import SpotlightBar from "./components/SpotlightBar";
+import CircularButton from "./components/CircularButton";
 
 function App() {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -144,23 +145,6 @@ function App() {
     setSpotlightOpen(true);
   };
 
-  const graphActions = [
-    {
-      key: "fit",
-      label: "Fit View",
-      ariaLabel: "Fit graph to view",
-      onClick: () => graphRef.current?.fitToGraph(),
-      disabled: !hasGraph,
-    },
-    {
-      key: "reset",
-      label: "Reset",
-      ariaLabel: "Reset graph",
-      onClick: handleReset,
-      disabled: !hasGraph,
-    },
-  ];
-
   return (
     <div className="app">
       <main className="canvas">
@@ -177,11 +161,11 @@ function App() {
           onRequestClose={() => setSpotlightOpen(false)}
         />
         <div className="graph-actions">
-          <button
-            type="button"
-            className="graph-actions__button graph-actions__button--icon"
+          <CircularButton
+            text="Search"
+            className="graph-actions__button--icon"
             onClick={() => setSpotlightOpen(true)}
-            aria-label="Open search"
+            ariaLabel="Open search"
           >
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path
@@ -192,19 +176,19 @@ function App() {
                 strokeLinecap="round"
               />
             </svg>
-          </button>
-          {graphActions.map((action) => (
-            <button
-              key={action.key}
-              type="button"
-              className="graph-actions__button"
-              onClick={action.onClick}
-              aria-label={action.ariaLabel}
-              disabled={action.disabled}
-            >
-              {action.label}
-            </button>
-          ))}
+          </CircularButton>
+          <CircularButton
+            text="Fit View"
+            onClick={() => graphRef.current?.fitToGraph()}
+            ariaLabel="Fit graph to view"
+            disabled={!hasGraph}
+          />
+          <CircularButton
+            text="Reset"
+            onClick={handleReset}
+            ariaLabel="Reset graph"
+            disabled={!hasGraph}
+          />
         </div>
         <div className="status">
           <strong>Status</strong> · {status}
@@ -231,28 +215,23 @@ function App() {
             }`}
           >
             <div className="controls-panel__header">
-              <div className="controls-panel__title">Layout Controls</div>
+              {controlsOpen ? (
+                <div className="controls-panel__title">
+                  Graph Layout Settings
+                </div>
+              ) : null}
               <button
                 type="button"
                 className="controls-panel__toggle"
                 onClick={() => setControlsOpen((prev) => !prev)}
                 aria-label={
                   controlsOpen
-                    ? "Collapse layout controls"
-                    : "Expand layout controls"
+                    ? "Close graph layout settings"
+                    : "Open graph layout settings"
                 }
                 aria-expanded={controlsOpen}
               >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="M7 10l5 5 5-5"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <img src="/cog.svg" alt="" aria-hidden="true" />
               </button>
             </div>
             {controlsOpen ? (

@@ -367,11 +367,24 @@ body,
   gap: 0.7rem;
 }
 
+.controls-panel--collapsed {
+  width: auto;
+  padding: 0;
+  background: transparent;
+  border: none;
+  backdrop-filter: none;
+  box-shadow: none;
+}
+
 .controls-panel__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 0.6rem;
+}
+
+.controls-panel:not(.controls-panel--collapsed) .controls-panel__header {
+  justify-content: space-between;
 }
 
 .controls-panel__content {
@@ -384,26 +397,28 @@ body,
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 10px;
-  border: 1px solid var(--panel-border);
-  background: rgba(20, 26, 32, 0.6);
-  color: var(--text);
+  width: 40px;
+  height: 40px;
+  margin-left: auto;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
   transition:
     transform 0.2s ease,
-    border-color 0.2s ease,
     color 0.2s ease;
 }
 
-.controls-panel__toggle svg {
-  width: 18px;
-  height: 18px;
+.controls-panel__toggle img {
+  width: 32px;
+  height: 32px;
+  display: block;
 }
 
 .controls-panel__toggle:hover {
-  border-color: var(--accent-2);
-  color: var(--accent-2);
+  transform: rotate(20deg);
+  color: var(--text);
 }
 
 .controls-panel__toggle:disabled {
@@ -411,8 +426,9 @@ body,
   cursor: not-allowed;
 }
 
-.controls-panel--collapsed .controls-panel__toggle {
-  transform: rotate(-90deg);
+.controls-panel__toggle:focus-visible {
+  outline: 2px solid rgba(86, 204, 242, 0.7);
+  outline-offset: 2px;
 }
 
 .controls-panel__title {
@@ -420,6 +436,9 @@ body,
   text-transform: uppercase;
   letter-spacing: 0.16em;
   color: var(--muted);
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--panel-border);
+  flex: 1;
 }
 
 .toggle {
@@ -500,6 +519,11 @@ body,
     position: static;
     width: 100%;
     margin: 0 1.5rem 1.5rem;
+  }
+
+  .controls-panel--collapsed {
+    width: auto;
+    margin-left: auto;
   }
 
   .graph-actions__button {
