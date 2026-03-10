@@ -8,6 +8,8 @@ import CircularButton from "./components/CircularButton";
 
 const PAUSED_SLOWDOWN = 1000;
 const STATUS_FADE_DURATION_MS = 3000;
+const CENTERED_CONTROLS_MEDIA_QUERY =
+  "(min-width: 801px) and (max-width: 1120px)";
 
 function App() {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -29,6 +31,8 @@ function App() {
   const [spotlightOpen, setSpotlightOpen] = useState(true);
   const [controlsOpen, setControlsOpen] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+  const [isCenteredControlsLayout, setIsCenteredControlsLayout] =
+    useState(false);
   const querySourceRef = useRef<WikipediaLanguage>(querySource);
   const initialLayoutSettingsRef = useRef(layoutSettings);
   const prevHasGraphRef = useRef(false);
@@ -91,7 +95,21 @@ function App() {
   }, [hasGraph]);
 
   useEffect(() => {
-    if (!controlsOpen) {
+    const mediaQuery = window.matchMedia(CENTERED_CONTROLS_MEDIA_QUERY);
+    const updateCenteredControlsLayout = (
+      event: MediaQueryList | MediaQueryListEvent,
+    ) => {
+      setIsCenteredControlsLayout(event.matches);
+    };
+
+    updateCenteredControlsLayout(mediaQuery);
+    mediaQuery.addEventListener("change", updateCenteredControlsLayout);
+    return () =>
+      mediaQuery.removeEventListener("change", updateCenteredControlsLayout);
+  }, []);
+
+  useEffect(() => {
+    if (!controlsOpen || !isCenteredControlsLayout) {
       return;
     }
 
@@ -110,7 +128,7 @@ function App() {
 
     document.addEventListener("pointerdown", handler);
     return () => document.removeEventListener("pointerdown", handler);
-  }, [controlsOpen]);
+  }, [controlsOpen, isCenteredControlsLayout]);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -379,7 +397,7 @@ function App() {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  By Eryk Kściuczyk
+                  By <strong>Eryk Kściuczyk</strong>
                 </a>
               </div>
             </div>
