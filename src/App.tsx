@@ -291,7 +291,9 @@ function App() {
                 className="graph-actions__button--icon"
                 onClick={() => setSpotlightOpen(true)}
                 ariaLabel="Open search"
-                title="shortcut: / or cmd/ctrl+k"
+                title={
+                  "Open the article search panel\n\nshortcut: / or cmd/ctrl+k"
+                }
               >
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path
@@ -307,13 +309,16 @@ function App() {
                 text="Fit View"
                 onClick={() => graphRef.current?.fitToGraph()}
                 ariaLabel="Fit graph to view"
-                title="shortcut: f"
+                title={
+                  "Center and zoom the graph to fit the viewport\n\nshortcut: f"
+                }
                 disabled={!hasGraph}
               />
               <CircularButton
                 text="Reset"
                 onClick={handleReset}
                 ariaLabel="Reset graph"
+                title="Clear the current graph and return to the search view"
                 disabled={!hasGraph}
               />
             </div>
@@ -358,6 +363,11 @@ function App() {
                 type="button"
                 className="controls-panel__toggle controls-panel__toggle--pause"
                 onClick={handlePauseToggle}
+                title={
+                  isPaused
+                    ? "Resume the graph layout simulation\n\nshortcut: space"
+                    : "Pause the graph layout simulation\n\nshortcut: space"
+                }
                 aria-label={
                   isPaused ? "Resume graph layout" : "Pause graph layout"
                 }
@@ -373,7 +383,7 @@ function App() {
                 type="button"
                 className="controls-panel__toggle controls-panel__toggle--settings"
                 onClick={() => setControlsOpen((prev) => !prev)}
-                title="shortcut: ,"
+                title={"Show the graph layout controls\n\nshortcut: ,"}
                 aria-label={
                   controlsOpen
                     ? "Close graph layout settings"
@@ -445,6 +455,7 @@ function App() {
                   className="controls-panel__reset"
                   onClick={handleResetLayoutSettings}
                   aria-label="Reset layout settings to default"
+                  title="Restore the layout controls to their default values"
                 >
                   <span>Reset to default</span>
                   <img src="/reset.svg" alt="" aria-hidden="true" />
