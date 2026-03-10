@@ -145,6 +145,10 @@ function App() {
     setSpotlightOpen(true);
   };
 
+  const handleResetLayoutSettings = () => {
+    setLayoutSettings({ ...defaultLayoutSettings });
+  };
+
   return (
     <div className="app">
       <main className="canvas">
@@ -289,6 +293,15 @@ function App() {
                     </label>
                   );
                 })}
+                <button
+                  type="button"
+                  className="controls-panel__reset"
+                  onClick={handleResetLayoutSettings}
+                  aria-label="Reset layout settings to default"
+                >
+                  <span>Reset to default</span>
+                  <img src="/reset.svg" alt="" aria-hidden="true" />
+                </button>
               </div>
             ) : null}
           </aside>

@@ -393,6 +393,49 @@ body,
   gap: 0.7rem;
 }
 
+.controls-panel__reset {
+  margin-top: 0.5rem;
+  align-self: flex-end;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  background: rgba(10, 18, 28, 0.72);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    background 0.18s ease;
+}
+
+.controls-panel__reset img {
+  width: 16px;
+  height: 16px;
+  display: block;
+  filter: invert(88%) sepia(5%) saturate(347%) hue-rotate(176deg)
+    brightness(104%) contrast(92%);
+}
+
+.controls-panel__reset:hover {
+  transform: translateY(-1px);
+  color: var(--text);
+  border-color: rgba(86, 204, 242, 0.35);
+  background: rgba(14, 24, 36, 0.88);
+}
+
+.controls-panel__reset:focus-visible {
+  outline: 2px solid rgba(86, 204, 242, 0.7);
+  outline-offset: 2px;
+}
+
 .controls-panel__toggle {
   display: inline-flex;
   align-items: center;
@@ -524,6 +567,11 @@ body,
   .controls-panel--collapsed {
     width: auto;
     margin-left: auto;
+  }
+
+  .controls-panel__reset {
+    width: 100%;
+    justify-content: flex-end;
   }
 
   .graph-actions__button {
