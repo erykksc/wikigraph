@@ -320,26 +320,31 @@ function App() {
                 disabled={!hasGraph}
               />
             </div>
-            <div
-              className={`status${error ? " status--error" : ""}${
-                statusVisible ? " status--visible" : ""
-              }${statusFading ? " status--fading" : ""}`}
-              aria-hidden={!statusVisible}
-            >
-              <strong>{error ? "Error" : "Status"}</strong> · {error ?? status}
-            </div>
             <div className="info-stack">
               <div className="node-count">
                 <div>Nodes: {nodeCount}</div>
                 <div>Edges: {edgeCount}</div>
               </div>
+            </div>
+            <div className="bottom-info-stack">
+              {statusVisible ? (
+                <div
+                  className={`status${error ? " status--error" : ""}${
+                    statusVisible ? " status--visible" : ""
+                  }${statusFading ? " status--fading" : ""}`}
+                  aria-hidden={!statusVisible}
+                >
+                  <strong>{error ? "Error" : "Status"}</strong> ·{" "}
+                  {error ?? status}
+                </div>
+              ) : null}
               <div className="credit">
                 <a
                   href="https://github.com/erykksc"
                   target="_blank"
                   rel="noreferrer"
                 >
-                  Created by Eryk Kściuczyk
+                  By Eryk Kściuczyk
                 </a>
               </div>
             </div>
