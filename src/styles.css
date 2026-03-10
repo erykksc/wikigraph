@@ -608,9 +608,15 @@ body,
 
 @media (max-width: 800px) {
   .header {
+    padding: 0.85rem 0.9rem;
     flex-direction: column;
     align-items: flex-start;
     gap: 0.8rem;
+  }
+
+  .info-stack {
+    top: max(0.75rem, env(safe-area-inset-top));
+    left: max(0.75rem, env(safe-area-inset-left));
   }
 
   .controls {
@@ -627,8 +633,10 @@ body,
   }
 
   .controls-panel {
-    width: min(280px, calc(100vw - 2rem));
-    max-width: calc(100vw - 2rem);
+    top: max(0.75rem, env(safe-area-inset-top));
+    right: max(0.75rem, env(safe-area-inset-right));
+    width: min(280px, calc(100vw - 1.5rem));
+    max-width: calc(100vw - 1.5rem);
   }
 
   .controls-panel--collapsed {
@@ -646,8 +654,12 @@ body,
     font-size: 0.65rem;
   }
 
+  .spotlight {
+    padding: 1rem 0.75rem;
+  }
+
   .spotlight__card {
-    padding: 1.5rem;
+    padding: 0.75rem;
   }
 
   .spotlight__form {
@@ -685,13 +697,14 @@ body,
   }
 
   .graph-actions {
-    bottom: 1.5rem;
+    right: 0.75rem;
+    bottom: 0.75rem;
   }
 
   .bottom-info-stack {
-    left: max(1rem, env(safe-area-inset-left));
-    bottom: max(1.5rem, env(safe-area-inset-bottom));
-    width: min(calc(100vw - 2rem), 320px);
+    left: max(0.75rem, env(safe-area-inset-left));
+    bottom: max(0.75rem, env(safe-area-inset-bottom));
+    width: min(calc(100vw - 1.5rem), 320px);
     transform: none;
   }
 }
