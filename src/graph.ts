@@ -156,7 +156,6 @@ export class GraphController {
         return {
           ...data,
           color: NODE_COLOR,
-          size: data.size * 1.2,
           labelBackground: true,
           labelBackgroundColor: LABEL_BACKGROUND_HIGHLIGHTED_COLOR,
           labelColor: LABEL_COLOR_HIGHLIGHTED,
