@@ -11,6 +11,7 @@ const STATUS_FADE_DURATION_MS = 3000;
 
 function App() {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const controlsPanelRef = useRef<HTMLElement | null>(null);
   const graphRef = useRef<GraphController | null>(null);
   const hasAppliedInitialLayoutRef = useRef(false);
   const [seed, setSeed] = useState("");
@@ -90,6 +91,28 @@ function App() {
   }, [hasGraph]);
 
   useEffect(() => {
+    if (!controlsOpen) {
+      return;
+    }
+
+    const handler = (event: MouseEvent | PointerEvent | TouchEvent) => {
+      const target = event.target;
+      if (!(target instanceof Node)) {
+        return;
+      }
+
+      if (controlsPanelRef.current?.contains(target)) {
+        return;
+      }
+
+      setControlsOpen(false);
+    };
+
+    document.addEventListener("pointerdown", handler);
+    return () => document.removeEventListener("pointerdown", handler);
+  }, [controlsOpen]);
+
+  useEffect(() => {
     if (!containerRef.current) return;
     graphRef.current = new GraphController({
       container: containerRef.current,
@@ -138,6 +161,12 @@ function App() {
           target.tagName === "SELECT");
 
       if (isEditable) return;
+
+      if (event.key === "Escape" && controlsOpen) {
+        event.preventDefault();
+        setControlsOpen(false);
+        return;
+      }
 
       const isSpacebar =
         event.key === " " || event.key === "Spacebar" || event.code === "Space";
@@ -198,7 +227,13 @@ function App() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [hasGraph, isPaused, layoutSettings.slowDown, spotlightOpen]);
+  }, [
+    controlsOpen,
+    hasGraph,
+    isPaused,
+    layoutSettings.slowDown,
+    spotlightOpen,
+  ]);
 
   useEffect(() => {
     if (!graphRef.current) return;
@@ -352,6 +387,7 @@ function App() {
         ) : null}
         {hasGraph && !spotlightOpen ? (
           <aside
+            ref={controlsPanelRef}
             className={`controls-panel${
               controlsOpen ? "" : " controls-panel--collapsed"
             }`}
