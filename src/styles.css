@@ -448,7 +448,6 @@ body,
   justify-content: center;
   width: 40px;
   height: 40px;
-  margin-left: auto;
   padding: 0;
   border: none;
   background: transparent;
@@ -459,15 +458,34 @@ body,
     color 0.2s ease;
 }
 
+.controls-panel__toggle--settings {
+  margin-left: auto;
+}
+
+.controls-panel__toggle--pause {
+  border-radius: 999px;
+}
+
 .controls-panel__toggle img {
   width: 32px;
   height: 32px;
   display: block;
 }
 
+.controls-panel__toggle--pause img {
+  width: 18px;
+  height: 18px;
+  filter: invert(88%) sepia(5%) saturate(347%) hue-rotate(176deg)
+    brightness(104%) contrast(92%);
+}
+
 .controls-panel__toggle:hover {
   transform: rotate(20deg);
   color: var(--text);
+}
+
+.controls-panel__toggle--pause:hover {
+  transform: translateY(-1px);
 }
 
 .controls-panel__toggle:disabled {

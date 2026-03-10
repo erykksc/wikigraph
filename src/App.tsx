@@ -6,6 +6,8 @@ import { layoutControls, defaultLayoutSettings } from "./layout-config";
 import SpotlightBar from "./components/SpotlightBar";
 import CircularButton from "./components/CircularButton";
 
+const PAUSED_SLOWDOWN = 1000;
+
 function App() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const graphRef = useRef<GraphController | null>(null);
@@ -22,9 +24,11 @@ function App() {
   const [edgeCount, setEdgeCount] = useState(0);
   const [spotlightOpen, setSpotlightOpen] = useState(true);
   const [controlsOpen, setControlsOpen] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
   const querySourceRef = useRef<WikipediaLanguage>(querySource);
   const initialLayoutSettingsRef = useRef(layoutSettings);
   const prevHasGraphRef = useRef(false);
+  const slowdownBeforePauseRef = useRef(defaultLayoutSettings.slowDown);
 
   const hasGraph = nodeCount > 0;
 
@@ -98,6 +102,31 @@ function App() {
 
       if (isEditable) return;
 
+      const isSpacebar =
+        event.key === " " || event.key === "Spacebar" || event.code === "Space";
+
+      if (isSpacebar) {
+        event.preventDefault();
+        setIsPaused((prev) => {
+          if (prev) {
+            setLayoutSettings((current) => ({
+              ...current,
+              slowDown: slowdownBeforePauseRef.current,
+            }));
+            return false;
+          }
+
+          slowdownBeforePauseRef.current = layoutSettings.slowDown;
+          setLayoutSettings((current) => ({
+            ...current,
+            slowDown: PAUSED_SLOWDOWN,
+          }));
+          setControlsOpen(false);
+          return true;
+        });
+        return;
+      }
+
       const isSlash =
         event.key === "/" && !event.altKey && !event.metaKey && !event.ctrlKey;
       const isCommandK =
@@ -110,7 +139,7 @@ function App() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [layoutSettings.slowDown]);
 
   useEffect(() => {
     if (!graphRef.current) return;
@@ -147,6 +176,26 @@ function App() {
 
   const handleResetLayoutSettings = () => {
     setLayoutSettings({ ...defaultLayoutSettings });
+  };
+
+  const handlePauseToggle = () => {
+    setIsPaused((prev) => {
+      if (prev) {
+        setLayoutSettings((current) => ({
+          ...current,
+          slowDown: slowdownBeforePauseRef.current,
+        }));
+        return false;
+      }
+
+      slowdownBeforePauseRef.current = layoutSettings.slowDown;
+      setLayoutSettings((current) => ({
+        ...current,
+        slowDown: PAUSED_SLOWDOWN,
+      }));
+      setControlsOpen(false);
+      return true;
+    });
   };
 
   return (
@@ -234,7 +283,22 @@ function App() {
               ) : null}
               <button
                 type="button"
-                className="controls-panel__toggle"
+                className="controls-panel__toggle controls-panel__toggle--pause"
+                onClick={handlePauseToggle}
+                aria-label={
+                  isPaused ? "Resume graph layout" : "Pause graph layout"
+                }
+                aria-pressed={isPaused}
+              >
+                <img
+                  src={isPaused ? "/play.svg" : "/pause.svg"}
+                  alt=""
+                  aria-hidden="true"
+                />
+              </button>
+              <button
+                type="button"
+                className="controls-panel__toggle controls-panel__toggle--settings"
                 onClick={() => setControlsOpen((prev) => !prev)}
                 aria-label={
                   controlsOpen
@@ -242,6 +306,7 @@ function App() {
                     : "Open graph layout settings"
                 }
                 aria-expanded={controlsOpen}
+                disabled={isPaused}
               >
                 <img src="/cog.svg" alt="" aria-hidden="true" />
               </button>
