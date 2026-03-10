@@ -707,6 +707,12 @@ body,
     transform: none;
   }
 
+  .node-count {
+    padding: 0.5rem 0.75rem;
+    border-radius: 10px;
+    gap: 0.1rem;
+  }
+
   .credit {
     font-size: 0.85rem;
   }
