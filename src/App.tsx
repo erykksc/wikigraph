@@ -50,9 +50,16 @@ function App() {
   });
   const { controlsPanelRef } = useControlsOverlay();
 
+  const handleResetGraph = () => {
+    resetGraph();
+    closeControls();
+    openSpotlight();
+  };
+
   useAppHotkeys({
     hasGraph,
     onFitGraph: fitGraph,
+    onResetGraph: handleResetGraph,
     onTogglePause: togglePause,
   });
 
@@ -75,12 +82,6 @@ function App() {
         error instanceof Error ? error.message : "Failed to load seed";
       showStatus(message, message);
     }
-  };
-
-  const handleResetGraph = () => {
-    resetGraph();
-    closeControls();
-    openSpotlight();
   };
 
   return (

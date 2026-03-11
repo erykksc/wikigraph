@@ -44,7 +44,9 @@ const GraphActions = ({
         text="Reset"
         onClick={onResetGraph}
         ariaLabel="Reset graph"
-        title="Clear the current graph and return to the search view"
+        title={
+          "Clear the current graph and return to the search view\n\nshortcut: r"
+        }
         disabled={disabled}
       />
     </div>

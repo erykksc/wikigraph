@@ -4,12 +4,14 @@ import { useAppStore } from "../store/useAppStore";
 type UseAppHotkeysParams = {
   hasGraph: boolean;
   onFitGraph: () => void;
+  onResetGraph: () => void;
   onTogglePause: () => void;
 };
 
 export function useAppHotkeys({
   hasGraph,
   onFitGraph,
+  onResetGraph,
   onTogglePause,
 }: UseAppHotkeysParams) {
   const spotlightOpen = useAppStore((state) => state.spotlightOpen);
@@ -72,6 +74,19 @@ export function useAppHotkeys({
       }
 
       if (
+        event.key.toLowerCase() === "r" &&
+        !event.altKey &&
+        !event.metaKey &&
+        !event.ctrlKey
+      ) {
+        event.preventDefault();
+        if (hasGraph) {
+          onResetGraph();
+        }
+        return;
+      }
+
+      if (
         event.key === "," &&
         !event.altKey &&
         !event.metaKey &&
@@ -91,6 +106,7 @@ export function useAppHotkeys({
     controlsOpen,
     hasGraph,
     onFitGraph,
+    onResetGraph,
     onTogglePause,
     openControls,
     openSpotlight,
