@@ -1,4 +1,6 @@
+import { cn } from "../cn";
 import type { ReactNode } from "react";
+import styles from "./CircularButton.module.css";
 
 type CircularButtonProps = {
   backgroundColor?: string;
@@ -26,7 +28,7 @@ const CircularButton = ({
   return (
     <button
       type="button"
-      className={`graph-actions__button${className ? ` ${className}` : ""}`}
+      className={cn(styles.root, className)}
       onClick={onClick}
       aria-label={ariaLabel}
       title={title}

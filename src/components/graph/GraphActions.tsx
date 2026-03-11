@@ -1,4 +1,5 @@
 import CircularButton from "../CircularButton";
+import styles from "./GraphActions.module.css";
 
 type GraphActionsProps = {
   onOpenSpotlight: () => void;
@@ -14,10 +15,10 @@ const GraphActions = ({
   disabled = false,
 }: GraphActionsProps) => {
   return (
-    <div className="graph-actions">
+    <div className={styles.root}>
       <CircularButton
         text="Search"
-        className="graph-actions__button--icon"
+        className={styles.iconButton}
         onClick={onOpenSpotlight}
         ariaLabel="Open search"
         title={"Open the article search panel\n\nshortcut: / or cmd/ctrl+k"}

@@ -1,5 +1,7 @@
+import { cn } from "../../cn";
 import { layoutControls } from "../../layout-config";
 import { useAppStore } from "../../store/useAppStore";
+import styles from "./LayoutControlsPanel.module.css";
 
 type LayoutControlsPanelProps = {
   panelRef: React.RefObject<HTMLElement | null>;
@@ -25,15 +27,15 @@ const LayoutControlsPanel = ({
   return (
     <aside
       ref={panelRef}
-      className={`controls-panel${open ? "" : " controls-panel--collapsed"}`}
+      className={cn(styles.root, !open && styles.isCollapsed)}
     >
-      <div className="controls-panel__header">
+      <div className={cn(styles.header, open && styles.isExpanded)}>
         {open ? (
-          <div className="controls-panel__title">Graph Layout Settings</div>
+          <div className={styles.title}>Graph Layout Settings</div>
         ) : null}
         <button
           type="button"
-          className="controls-panel__toggle controls-panel__toggle--pause"
+          className={cn(styles.toggleButton, styles.pauseToggle)}
           onClick={onTogglePause}
           title={
             isPaused
@@ -51,7 +53,7 @@ const LayoutControlsPanel = ({
         </button>
         <button
           type="button"
-          className="controls-panel__toggle controls-panel__toggle--settings"
+          className={cn(styles.toggleButton, styles.settingsToggle)}
           onClick={onToggleOpen}
           title={
             open
@@ -67,11 +69,9 @@ const LayoutControlsPanel = ({
         </button>
       </div>
       {open ? (
-        <div
-          className={`controls-panel__content${isPaused ? " controls-panel__content--disabled" : ""}`}
-        >
+        <div className={cn(styles.content, isPaused && styles.isPaused)}>
           {isPaused ? (
-            <div className="controls-panel__hint" role="status">
+            <div className={styles.hint} role="status">
               Resume layout to edit settings.
             </div>
           ) : null}
@@ -80,11 +80,12 @@ const LayoutControlsPanel = ({
               const checked = Boolean(layoutSettings[control.key]);
               return (
                 <label
-                  className="toggle"
+                  className={styles.booleanControl}
                   key={control.key}
                   title={control.description}
                 >
                   <input
+                    className={styles.booleanInput}
                     type="checkbox"
                     checked={checked}
                     disabled={isPaused}
@@ -100,15 +101,16 @@ const LayoutControlsPanel = ({
             const value = Number(layoutSettings[control.key] ?? 0);
             return (
               <label
-                className="slider"
+                className={styles.slider}
                 key={control.key}
                 title={control.description}
               >
-                <div>
+                <div className={styles.sliderHeader}>
                   <span>{control.label}</span>
-                  <span className="slider__value">{value.toFixed(2)}</span>
+                  <span className={styles.sliderValue}>{value.toFixed(2)}</span>
                 </div>
                 <input
+                  className={styles.range}
                   type="range"
                   min={control.min}
                   max={control.max}
@@ -124,7 +126,7 @@ const LayoutControlsPanel = ({
           })}
           <button
             type="button"
-            className="controls-panel__reset"
+            className={styles.reset}
             onClick={onReset}
             aria-label="Reset layout settings to default"
             title="Restore the layout controls to their default values"

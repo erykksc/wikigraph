@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { WIKIPEDIA_LANGUAGES, type WikipediaLanguage } from "../api";
+import { cn } from "../cn";
 import { useAppStore } from "../store/useAppStore";
+import styles from "./SpotlightBar.module.css";
 
 const resetInstructionsLayout = (
   setInstructionsMaxHeight: React.Dispatch<React.SetStateAction<number | null>>,
@@ -112,11 +114,10 @@ const SpotlightBar = ({
 
   return (
     <div
-      className={`spotlight${isEmptyState ? " spotlight--empty" : ""}${
-        effectiveInstructionsNeedScroll
-          ? " spotlight--instructions-overflow"
-          : ""
-      }`}
+      className={cn(
+        styles.root,
+        effectiveInstructionsNeedScroll && styles.isOverflowing,
+      )}
       onMouseDown={(event) => {
         if (event.currentTarget === event.target && hasGraph) {
           onRequestClose();
@@ -124,17 +125,17 @@ const SpotlightBar = ({
       }}
     >
       {isEmptyState ? (
-        <div className="spotlight__hero">
-          <h1 className="spotlight__title">WikiGraph</h1>
+        <div className={styles.hero}>
+          <h1 className={styles.title}>WikiGraph</h1>
           <a
-            className="spotlight__subtitle"
+            className={styles.subtitle}
             href="https://github.com/erykksc/wikigraph"
             target="_blank"
             rel="noreferrer"
           >
             By Eryk Kściuczyk
             <img
-              className="spotlight__subtitle-icon"
+              className={styles.subtitleIcon}
               src={`${assetBaseUrl}GitHub_Invertocat_White.svg`}
               alt=""
               aria-hidden="true"
@@ -142,10 +143,11 @@ const SpotlightBar = ({
           </a>
         </div>
       ) : null}
-      <div className="spotlight__card">
-        <form className="spotlight__form" onSubmit={onSubmit}>
-          <div className="spotlight__row spotlight__row--wrap">
+      <div className={styles.card}>
+        <form className={styles.form} onSubmit={onSubmit}>
+          <div className={cn(styles.row, styles.rowWrap)}>
             <input
+              className={styles.input}
               ref={seedInputRef}
               type="text"
               value={seed}
@@ -153,6 +155,7 @@ const SpotlightBar = ({
               placeholder="Wikipedia article title e.g. Bytom or Graph theory"
             />
             <select
+              className={styles.select}
               value={querySource}
               onChange={(event) =>
                 setQuerySource(event.target.value as WikipediaLanguage)
@@ -167,16 +170,21 @@ const SpotlightBar = ({
               ))}
             </select>
           </div>
-          <div className="spotlight__row spotlight__row--center">
-            <button type="submit" disabled={isLoading}>
+          <div className={cn(styles.row, styles.rowCenter)}>
+            <button
+              type="submit"
+              className={styles.submitButton}
+              disabled={isLoading}
+            >
               {isLoading ? "Loading..." : "Grow Graph"}
             </button>
           </div>
         </form>
       </div>
       {isEmptyState ? (
-        <details className="spotlight__instructions" open={instructionsOpen}>
+        <details className={styles.instructions} open={instructionsOpen}>
           <summary
+            className={styles.instructionsSummary}
             onClick={(event) => {
               event.preventDefault();
               setInstructionsOpen((current) => !current);
@@ -186,14 +194,14 @@ const SpotlightBar = ({
           </summary>
           <div
             ref={instructionsContentRef}
-            className="spotlight__instructions-content"
+            className={styles.instructionsContent}
             style={
               effectiveInstructionsMaxHeight === null
                 ? undefined
                 : { maxHeight: `${effectiveInstructionsMaxHeight}px` }
             }
           >
-            <section className="spotlight__instructions-section">
+            <section className={styles.instructionsSection}>
               <h2>Getting Started</h2>
               <p>
                 Enter a Wikipedia article title and click Grow Graph or press
@@ -201,12 +209,12 @@ const SpotlightBar = ({
               </p>
             </section>
 
-            <section className="spotlight__instructions-section">
+            <section className={styles.instructionsSection}>
               <h2>Exploring the Graph</h2>
               <p>
                 Left click a blue node{" "}
                 <span
-                  className="spotlight__node-dot spotlight__node-dot--unexpanded"
+                  className={cn(styles.nodeDot, styles.nodeDotUnexpanded)}
                   aria-hidden="true"
                 >
                   {"\u2b24"}
@@ -218,11 +226,11 @@ const SpotlightBar = ({
               </p>
             </section>
 
-            <section className="spotlight__instructions-section">
+            <section className={styles.instructionsSection}>
               <h2>Node Colors</h2>
               <p>
                 <span
-                  className="spotlight__node-dot spotlight__node-dot--unexpanded"
+                  className={cn(styles.nodeDot, styles.nodeDotUnexpanded)}
                   aria-hidden="true"
                 >
                   {"\u2b24"}
@@ -231,7 +239,7 @@ const SpotlightBar = ({
               </p>
               <p>
                 <span
-                  className="spotlight__node-dot spotlight__node-dot--expanded"
+                  className={cn(styles.nodeDot, styles.nodeDotExpanded)}
                   aria-hidden="true"
                 >
                   {"\u2b24"}
@@ -240,7 +248,7 @@ const SpotlightBar = ({
               </p>
             </section>
 
-            <section className="spotlight__instructions-section">
+            <section className={styles.instructionsSection}>
               <h2>Shortcuts</h2>
               <p>
                 <kbd>/</kbd> or <kbd>cmd</kbd>/<kbd>ctrl</kbd>+<kbd>k</kbd>{" "}

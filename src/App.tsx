@@ -1,4 +1,5 @@
 import type { FormEvent } from "react";
+import styles from "./App.module.css";
 import SpotlightBar from "./components/SpotlightBar";
 import GraphActions from "./components/graph/GraphActions";
 import GraphCanvas from "./components/graph/GraphCanvas";
@@ -83,8 +84,8 @@ function App() {
   };
 
   return (
-    <div className="app">
-      <main className="canvas">
+    <div className={styles.app}>
+      <main className={styles.canvas}>
         <GraphCanvas containerRef={containerRef} />
         <SpotlightBar
           open={!hasGraph || spotlightOpen}
@@ -105,7 +106,7 @@ function App() {
               onResetGraph={handleResetGraph}
             />
             <GraphInfo />
-            <div className="bottom-info-stack">
+            <div className={styles.bottomInfoStack}>
               <StatusToast />
               <CreditBadge />
             </div>

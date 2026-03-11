@@ -1,6 +1,8 @@
+import styles from "./CreditBadge.module.css";
+
 const CreditBadge = () => {
   return (
-    <div className="credit">
+    <div className={styles.root}>
       <a href="https://github.com/erykksc" target="_blank" rel="noreferrer">
         <strong>WikiGraph</strong>
         <br />
