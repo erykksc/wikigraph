@@ -1,14 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { WIKIPEDIA_LANGUAGES, type WikipediaLanguage } from "../api";
+import { useAppStore } from "../store/useAppStore";
+
+const resetInstructionsLayout = (
+  setInstructionsMaxHeight: React.Dispatch<React.SetStateAction<number | null>>,
+  setInstructionsNeedScroll: React.Dispatch<React.SetStateAction<boolean>>,
+) => {
+  setInstructionsMaxHeight(null);
+  setInstructionsNeedScroll(false);
+};
 
 type SpotlightBarProps = {
   open: boolean;
   hasGraph: boolean;
-  seed: string;
-  querySource: WikipediaLanguage;
   isLoading: boolean;
-  onSeedChange: (value: string) => void;
-  onQuerySourceChange: (value: WikipediaLanguage) => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
   onRequestClose: () => void;
 };
@@ -16,15 +21,15 @@ type SpotlightBarProps = {
 const SpotlightBar = ({
   open,
   hasGraph,
-  seed,
-  querySource,
   isLoading,
-  onSeedChange,
-  onQuerySourceChange,
   onSubmit,
   onRequestClose,
 }: SpotlightBarProps) => {
   const assetBaseUrl = import.meta.env.BASE_URL;
+  const seed = useAppStore((state) => state.seed);
+  const querySource = useAppStore((state) => state.querySource);
+  const setSeed = useAppStore((state) => state.setSeed);
+  const setQuerySource = useAppStore((state) => state.setQuerySource);
   const seedInputRef = useRef<HTMLInputElement | null>(null);
   const instructionsContentRef = useRef<HTMLDivElement | null>(null);
   const isEmptyState = !hasGraph;
@@ -33,6 +38,10 @@ const SpotlightBar = ({
     number | null
   >(null);
   const [instructionsNeedScroll, setInstructionsNeedScroll] = useState(false);
+  const effectiveInstructionsMaxHeight =
+    isEmptyState && instructionsOpen ? instructionsMaxHeight : null;
+  const effectiveInstructionsNeedScroll =
+    isEmptyState && instructionsOpen ? instructionsNeedScroll : false;
 
   useEffect(() => {
     if (!open) return;
@@ -53,8 +62,12 @@ const SpotlightBar = ({
 
   useEffect(() => {
     if (!isEmptyState || !instructionsOpen) {
-      setInstructionsMaxHeight(null);
-      setInstructionsNeedScroll(false);
+      queueMicrotask(() => {
+        resetInstructionsLayout(
+          setInstructionsMaxHeight,
+          setInstructionsNeedScroll,
+        );
+      });
       return;
     }
 
@@ -100,7 +113,9 @@ const SpotlightBar = ({
   return (
     <div
       className={`spotlight${isEmptyState ? " spotlight--empty" : ""}${
-        instructionsNeedScroll ? " spotlight--instructions-overflow" : ""
+        effectiveInstructionsNeedScroll
+          ? " spotlight--instructions-overflow"
+          : ""
       }`}
       onMouseDown={(event) => {
         if (event.currentTarget === event.target && hasGraph) {
@@ -134,13 +149,13 @@ const SpotlightBar = ({
               ref={seedInputRef}
               type="text"
               value={seed}
-              onChange={(event) => onSeedChange(event.target.value)}
+              onChange={(event) => setSeed(event.target.value)}
               placeholder="Wikipedia article title e.g. Bytom or Graph theory"
             />
             <select
               value={querySource}
               onChange={(event) =>
-                onQuerySourceChange(event.target.value as WikipediaLanguage)
+                setQuerySource(event.target.value as WikipediaLanguage)
               }
               aria-label="Query source"
             >
@@ -173,9 +188,9 @@ const SpotlightBar = ({
             ref={instructionsContentRef}
             className="spotlight__instructions-content"
             style={
-              instructionsMaxHeight === null
+              effectiveInstructionsMaxHeight === null
                 ? undefined
-                : { maxHeight: `${instructionsMaxHeight}px` }
+                : { maxHeight: `${effectiveInstructionsMaxHeight}px` }
             }
           >
             <section className="spotlight__instructions-section">
