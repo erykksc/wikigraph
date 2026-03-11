@@ -177,6 +177,10 @@ export const expandTitleFromWikipedia = async (
   );
   const cached = getLocalStorageJson<ExpandResponse>(expandKey);
   if (cached) {
+    console.log("cache hit: expand", {
+      language,
+      title: normalizedTitle,
+    });
     return cached;
   }
 
@@ -223,6 +227,10 @@ export const suggestTitlesFromWikipedia = async (
   );
   const cached = getLocalStorageJson<string[]>(suggestKey);
   if (cached) {
+    console.log("cache hit: suggest", {
+      language,
+      query: trimmedQuery,
+    });
     return cached;
   }
 

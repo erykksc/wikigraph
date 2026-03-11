@@ -98,6 +98,6 @@ export const defaultLayoutSettings: ForceAtlas2Settings = {
   linLogMode: false,
   outboundAttractionDistribution: true,
   scalingRatio: 1,
-  slowDown: 0.1,
+  slowDown: 1,
   strongGravityMode: false,
 };
