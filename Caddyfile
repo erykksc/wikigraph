@@ -1,12 +1,12 @@
 :80 {
-  encode zstd gzip
+	encode zstd gzip
 
-  header {
-    X-Frame-Options "DENY"
-    X-Content-Type-Options "nosniff"
-    Referrer-Policy "strict-origin-when-cross-origin"
-    Permissions-Policy "geolocation=(), microphone=(), camera=()"
-    Content-Security-Policy <<CSP
+	header {
+		X-Frame-Options "DENY"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "geolocation=(), microphone=(), camera=()"
+		Content-Security-Policy <<CSP
       default-src 'self';
       style-src 'self' https://fonts.googleapis.com;
       img-src 'self' data: https:;
@@ -19,9 +19,9 @@
       form-action 'self';
       object-src 'none';
       CSP
-  }
+	}
 
-  root * /srv
-  try_files {path} /index.html
-  file_server
+	root * /srv
+	try_files {path} /index.html
+	file_server
 }
