@@ -39,6 +39,8 @@ jobs:
         run: npm run lint
 
       - name: Build site
+        env:
+          APP_BASE_PATH: /wikigraph/
         run: npm run build
 
       - name: Upload Pages artifact

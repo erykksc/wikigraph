@@ -1,4 +1,5 @@
 [tools]
+caddy = "latest"
 node = "latest"
 
 [tasks.docker]

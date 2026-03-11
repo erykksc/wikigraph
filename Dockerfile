@@ -2,6 +2,8 @@ FROM node:24-alpine AS build
 
 WORKDIR /app
 
+ARG APP_BASE_PATH=/
+
 COPY package.json package-lock.json ./
 
 RUN npm ci
@@ -15,7 +17,7 @@ COPY tsconfig.json ./tsconfig.json
 COPY tsconfig.app.json ./tsconfig.app.json
 COPY tsconfig.node.json ./tsconfig.node.json
 
-RUN npm run build
+RUN APP_BASE_PATH="$APP_BASE_PATH" npm run build
 
 FROM caddy:2-alpine AS runtime
 
