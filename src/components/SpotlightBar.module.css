@@ -115,7 +115,7 @@
 
 .inputGroup {
   position: relative;
-  flex: 1 1 280px;
+  flex: 1 1 auto;
   min-width: 220px;
 }
 
@@ -380,7 +380,6 @@
   }
 
   .input {
-    flex: 0 0 auto;
     padding: 0.7rem 0.85rem;
   }
 
@@ -409,7 +408,8 @@
   }
 
   .rowWrap .select {
-    width: min(100%, 320px);
+    width: auto;
+    flex: 0 0 auto;
   }
 }
 

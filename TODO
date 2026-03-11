@@ -1,0 +1,5 @@
+Add background music, sound effects on clicking the node, and when node is expanded.
+
+Add wikipedia article suggestions by querying Wikipedia API. Add a delay between finishing typing and sending a request to limit the amount of requests sent.
+
+Add caching for wikipedia article suggestions
