@@ -15,7 +15,7 @@ import { useStatusToast } from "./hooks/useStatusToast";
 import { defaultLayoutSettings } from "./layout-config";
 import { useAppStore } from "./store/useAppStore";
 
-const PAUSED_SLOWDOWN = 1000;
+const PAUSED_SLOWDOWN = 999999;
 
 function App() {
   const assetBaseUrl = import.meta.env.BASE_URL;
