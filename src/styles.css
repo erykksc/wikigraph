@@ -237,11 +237,12 @@ body,
 
 .spotlight__card {
   width: min(900px, 100%);
-  background: transparent;
-  border: none;
-  border-radius: 0;
-  padding: 0;
-  box-shadow: none;
+  background: rgba(12, 22, 34, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 1rem;
+  box-shadow: 0 24px 60px -36px rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(14px);
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -665,6 +666,7 @@ body,
 
   .spotlight__card {
     padding: 0.75rem;
+    border-radius: 20px;
   }
 
   .spotlight__form {
