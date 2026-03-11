@@ -11,9 +11,13 @@
 - Root app
   - `package.json` - scripts and dependencies
   - `src/App.tsx` - thin app shell that composes hooks and UI components
+  - `src/App.module.css` - app-shell layout styles for the root canvas and bottom overlay stack
+  - `src/styles.css` - global-only stylesheet for fonts, design tokens, reset, and page-level background/sizing
+  - `src/cn.ts` - tiny helper for composing conditional class names in React components
   - `src/graph.ts` - Sigma/Graphology controller and interactions
   - `src/api/` - Wikipedia fetch logic
-  - `src/components/` - UI building blocks, including `src/components/graph/` for graph overlays and controls
+  - `src/components/` - UI building blocks, with colocated `*.module.css` files for component-scoped styles
+  - `src/components/graph/` - graph overlays, controls, and graph-adjacent UI, each with colocated CSS Modules where needed
   - `src/hooks/` - React hooks for graph lifecycle, layout controls, hotkeys, overlays, and status handling
   - `src/store/useAppStore.ts` - Zustand store for shared app/UI state
   - `src/types.ts` - shared client data types
@@ -29,6 +33,10 @@
   - `src/hooks/` adapts React state/events to the imperative graph controller.
 - Shared cross-component UI state is stored in Zustand via `src/store/useAppStore.ts`.
 - Zustand currently holds search state, spotlight visibility, controls visibility, layout settings, pause state, loading/count state, and status toast state.
+- Styling uses CSS Modules for component-scoped styles and a small global stylesheet for app-wide concerns.
+- Keep component styles colocated next to components as `*.module.css`; avoid adding new large global selector blocks to `src/styles.css`.
+- Use `src/styles.css` only for global fonts, CSS variables/design tokens, reset rules, and app-wide page background/layout primitives.
+- When composing multiple module classes conditionally in TSX, prefer the `cn` helper from `src/cn.ts` over ad-hoc string joins.
 - Prefer putting app-wide UI state in the Zustand store instead of re-introducing deep prop drilling through `App.tsx`.
 - Keep `App.tsx` focused on composition, high-level flow, and wiring together hooks/components.
 - Keep graph rendering and interaction logic inside `src/graph.ts`; avoid moving Sigma/Graphology internals into React components.
@@ -51,6 +59,13 @@
   - Should not become a second state store.
   - Prefer reading shared state from Zustand and delegating behavior to hooks/components rather than recreating cross-cutting state in `App.tsx`.
 
+## Styling Conventions
+
+- Prefer CSS Modules with one primary `root` class per component stylesheet and descriptive child classes.
+- Prefer `isX` naming for state/modifier classes in CSS Modules when a class represents a component state.
+- Keep selectors local and explicit; descendant tag selectors are acceptable when they keep markup simpler, but avoid recreating broad global CSS patterns.
+- If a style is reused by multiple components, first consider whether it should stay duplicated, move into a shared component, or become a small shared utility before promoting it to global CSS.
+
 ## Development
 
 From repo root:
@@ -68,3 +83,4 @@ npm run format
 - No backend service is required.
 - All expansion requests go from browser to `https://<lang>.wikipedia.org/w/api.php`.
 - Ensure CSP/network policy allows outbound requests to Wikipedia APIs when deployed.
+- When adding features or refactors that change project structure, shared conventions, state ownership, styling approach, or important workflows, update `AGENTS.md` in the same task so future OpenCode runs stay aligned with the current codebase.
