@@ -1,5 +1,6 @@
 import {
   expandTitleFromWikipedia,
+  suggestTitlesFromWikipedia,
   type WikipediaLanguage,
   WIKIPEDIA_LANGUAGES,
 } from "./wikipedia";
@@ -13,4 +14,12 @@ export const expandTitle = async (
   language: WikipediaLanguage,
 ): Promise<ExpandResponse> => {
   return expandTitleFromWikipedia(title, language);
+};
+
+export const suggestTitles = async (
+  query: string,
+  language: WikipediaLanguage,
+  signal?: AbortSignal,
+): Promise<string[]> => {
+  return suggestTitlesFromWikipedia(query, language, signal);
 };

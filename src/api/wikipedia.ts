@@ -18,6 +18,7 @@ export type WikipediaLanguage = (typeof WIKIPEDIA_LANGUAGES)[number]["code"];
 const CACHE_PREFIX = "wg:cache:";
 const RESOLVE_TITLE_CACHE_PREFIX = `${CACHE_PREFIX}resolve-title:v1:`;
 const EXPAND_CACHE_PREFIX = `${CACHE_PREFIX}expand:v1:`;
+const SUGGEST_CACHE_PREFIX = `${CACHE_PREFIX}suggest:v1:`;
 
 const cacheKeyForTitle = (
   prefix: string,
@@ -44,6 +45,17 @@ type WikiResponse = {
   };
 };
 
+type WikiPrefixSearchResponse = {
+  query?: {
+    prefixsearch?: Array<{
+      title: string;
+    }>;
+  };
+  error?: {
+    info?: string;
+  };
+};
+
 type QueryOutlinksResponse = {
   plcontinue: string | undefined;
   outLinks: Array<{ srcTitle: string; targetTitle: string }>;
@@ -63,10 +75,11 @@ const getPages = (res: WikiResponse): WikiPage[] => {
   return Object.values(pages);
 };
 
-const fetchWikiJson = async (
+const fetchWikiJson = async <TResponse extends { error?: { info?: string } }>(
+  signal: AbortSignal | undefined,
   language: WikipediaLanguage,
   params: Record<string, string>,
-): Promise<WikiResponse> => {
+): Promise<TResponse> => {
   const url = new URL(wikiApiBase(language));
   url.search = new URLSearchParams({
     format: "json",
@@ -75,12 +88,12 @@ const fetchWikiJson = async (
     ...params,
   }).toString();
 
-  const res = await fetch(url.toString());
+  const res = await fetch(url.toString(), { signal });
   if (!res.ok) {
     throw new Error(`Wikipedia API error: ${res.status}`);
   }
 
-  const payload = (await res.json()) as WikiResponse;
+  const payload = (await res.json()) as TResponse;
   if (payload.error?.info) {
     throw new Error(payload.error.info);
   }
@@ -104,7 +117,7 @@ const queryOutlinks = async (
     params.plcontinue = plcontinue;
   }
 
-  const res = await fetchWikiJson(language, params);
+  const res = await fetchWikiJson<WikiResponse>(undefined, language, params);
   const pages = getPages(res);
 
   const outLinks: Array<{ srcTitle: string; targetTitle: string }> = [];
@@ -137,7 +150,7 @@ const resolveTitle = async (
     return cached;
   }
 
-  const res = await fetchWikiJson(language, {
+  const res = await fetchWikiJson<WikiResponse>(undefined, language, {
     action: "query",
     titles: title,
   });
@@ -191,4 +204,44 @@ export const expandTitleFromWikipedia = async (
 
   setLocalStorageJson(expandKey, payload);
   return payload;
+};
+
+export const suggestTitlesFromWikipedia = async (
+  query: string,
+  language: WikipediaLanguage,
+  signal?: AbortSignal,
+): Promise<string[]> => {
+  const trimmedQuery = query.trim();
+  if (trimmedQuery.length < 2) {
+    return [];
+  }
+
+  const suggestKey = cacheKeyForTitle(
+    SUGGEST_CACHE_PREFIX,
+    language,
+    trimmedQuery,
+  );
+  const cached = getLocalStorageJson<string[]>(suggestKey);
+  if (cached) {
+    return cached;
+  }
+
+  const response = await fetchWikiJson<WikiPrefixSearchResponse>(
+    signal,
+    language,
+    {
+      action: "query",
+      list: "prefixsearch",
+      pssearch: trimmedQuery,
+      pslimit: "8",
+      psnamespace: "0",
+    },
+  );
+
+  const suggestions = Array.from(
+    new Set(response.query?.prefixsearch?.map((page) => page.title) ?? []),
+  );
+
+  setLocalStorageJson(suggestKey, suggestions);
+  return suggestions;
 };
