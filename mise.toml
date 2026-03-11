@@ -10,3 +10,16 @@ docker run --rm -it \
   -p 3000:80 \
   wikigraph:latest
 """
+
+[tasks.check]
+run = """
+npm run lint
+npm run build
+"""
+
+[tasks.format]
+run = """
+npm run format
+caddy fmt --overwrite
+"""
+
