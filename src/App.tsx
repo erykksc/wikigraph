@@ -398,7 +398,9 @@ function App() {
                   target="_blank"
                   rel="noreferrer"
                 >
-                  By <strong>Eryk Kściuczyk</strong>
+                  <strong>WikiGraph</strong>
+                  <br />
+                  by Eryk Kściuczyk
                 </a>
               </div>
             </div>
