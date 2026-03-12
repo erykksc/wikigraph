@@ -1,5 +1,7 @@
 # WikiGraph
 
+> The app is available for free at [wikigraph.eryk.one](https://wikigraph.eryk.one)
+
 Interactive Wikipedia graph explorer built with React and TypeScript.
 Start from any article, expand outward through linked pages, and follow how topics connect across Wikipedia.
 
