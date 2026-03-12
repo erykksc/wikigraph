@@ -11,6 +11,8 @@ Use it to uncover surprising paths between two topics.
 Use it to explore the intersections between different fields, ideas, and domains.
 What looks unrelated at first can reveal a chain of shared concepts after only a few expansions.
 
+https://github.com/user-attachments/assets/84b684a9-3b8d-486d-a8b7-f628e37bd426
+
 ## What it does
 
 WikiGraph turns Wikipedia from a list of articles into a map of connected ideas.
