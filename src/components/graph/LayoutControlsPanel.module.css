@@ -82,30 +82,6 @@
   accent-color: var(--accent-2);
 }
 
-.slider {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-  font-size: 0.8rem;
-  color: var(--text);
-}
-
-.sliderHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-}
-
-.sliderValue {
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-
-.range {
-  width: 100%;
-}
-
-.range:disabled,
 .booleanInput:disabled {
   cursor: not-allowed;
 }

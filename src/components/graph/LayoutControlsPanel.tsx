@@ -2,6 +2,7 @@ import { cn } from "../../cn";
 import { layoutControls } from "../../layout-config";
 import { useAppStore } from "../../store/useAppStore";
 import AudioToggleButton from "./AudioToggleButton";
+import LayoutNumberControl from "./LayoutNumberControl";
 import LayoutResetButton from "./LayoutResetButton";
 import PauseToggleButton from "./PauseToggleButton";
 import SettingsToggleButton from "./SettingsToggleButton";
@@ -91,28 +92,19 @@ const LayoutControlsPanel = ({
 
             const value = Number(layoutSettings[control.key] ?? 0);
             return (
-              <label
-                className={styles.slider}
+              <LayoutNumberControl
                 key={control.key}
-                title={control.description}
-              >
-                <div className={styles.sliderHeader}>
-                  <span>{control.label}</span>
-                  <span className={styles.sliderValue}>{value.toFixed(2)}</span>
-                </div>
-                <input
-                  className={styles.range}
-                  type="range"
-                  min={control.min}
-                  max={control.max}
-                  step={control.step}
-                  value={value}
-                  disabled={isPaused}
-                  onChange={(event) =>
-                    setLayoutNumber(control.key, Number(event.target.value))
-                  }
-                />
-              </label>
+                label={control.label}
+                description={control.description}
+                min={control.min ?? 0}
+                max={control.max ?? 0}
+                step={control.step ?? 1}
+                value={value}
+                disabled={isPaused}
+                onChange={(nextValue) =>
+                  setLayoutNumber(control.key, nextValue)
+                }
+              />
             );
           })}
           <LayoutResetButton

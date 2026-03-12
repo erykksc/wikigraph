@@ -1,0 +1,44 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--text);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.label {
+  min-width: 0;
+}
+
+.valueInput {
+  width: 4.5rem;
+  padding: 0.2rem 0.35rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  background: rgba(10, 18, 28, 0.55);
+  color: var(--muted);
+  font: inherit;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.valueInput:focus {
+  outline: 1px solid var(--accent-2);
+  outline-offset: 1px;
+}
+
+.range {
+  width: 100%;
+}
+
+.range:disabled,
+.valueInput:disabled {
+  cursor: not-allowed;
+}
