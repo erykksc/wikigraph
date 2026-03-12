@@ -1,4 +1,4 @@
-import type { FormEvent } from "react";
+import { useCallback, useEffect, useRef, type FormEvent } from "react";
 import styles from "./App.module.css";
 import SpotlightBar from "./components/SpotlightBar";
 import GraphActions from "./components/graph/GraphActions";
@@ -16,18 +16,66 @@ import { defaultLayoutSettings } from "./layout-config";
 import { useAppStore } from "./store/useAppStore";
 
 const PAUSED_SLOWDOWN = 999999;
+const BACKGROUND_MUSIC_VOLUME = 0.3;
 
 function App() {
   const assetBaseUrl = import.meta.env.BASE_URL;
   const seed = useAppStore((state) => state.seed);
   const querySource = useAppStore((state) => state.querySource);
   const spotlightOpen = useAppStore((state) => state.spotlightOpen);
+  const isAudioMuted = useAppStore((state) => state.isAudioMuted);
   const setSeed = useAppStore((state) => state.setSeed);
   const openSpotlight = useAppStore((state) => state.openSpotlight);
   const closeSpotlight = useAppStore((state) => state.closeSpotlight);
   const closeControls = useAppStore((state) => state.closeControls);
   const toggleControls = useAppStore((state) => state.toggleControls);
+  const toggleAudioMuted = useAppStore((state) => state.toggleAudioMuted);
   const { showStatus, fadeStatus, clearStatus } = useStatusToast();
+  const backgroundAudioRef = useRef<HTMLAudioElement | null>(null);
+  const clickAudioRef = useRef<HTMLAudioElement | null>(null);
+  const hasUnlockedAudioRef = useRef(false);
+
+  const unlockAudio = useCallback(async () => {
+    if (hasUnlockedAudioRef.current) {
+      return true;
+    }
+
+    const backgroundAudio = backgroundAudioRef.current;
+    if (!backgroundAudio) {
+      return false;
+    }
+
+    try {
+      await backgroundAudio.play();
+      hasUnlockedAudioRef.current = true;
+      return true;
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Audio playback was blocked";
+      showStatus("Interact again to enable audio", message);
+      fadeStatus();
+      return false;
+    }
+  }, [fadeStatus, showStatus]);
+
+  const playExpansionSound = useCallback(() => {
+    const clickAudio = clickAudioRef.current;
+    if (!clickAudio) {
+      return;
+    }
+
+    void unlockAudio().then((didUnlock) => {
+      if (!didUnlock) {
+        return;
+      }
+
+      clickAudio.currentTime = 0;
+      void clickAudio.play().catch(() => {
+        // Ignore transient sound effect playback failures.
+      });
+    });
+  }, [unlockAudio]);
+
   const {
     containerRef,
     graphRef,
@@ -42,6 +90,7 @@ function App() {
     onShowStatus: showStatus,
     onFadeStatus: fadeStatus,
     onClearStatus: clearStatus,
+    onExpansionTriggered: playExpansionSound,
   });
   const { resetLayoutSettings, togglePause } = useLayoutSettings({
     graphRef,
@@ -49,6 +98,58 @@ function App() {
     pausedSlowdown: PAUSED_SLOWDOWN,
   });
   const { controlsPanelRef } = useControlsOverlay();
+
+  useEffect(() => {
+    const backgroundAudio = new Audio(`${assetBaseUrl}background-music.mp3`);
+    backgroundAudio.loop = true;
+    backgroundAudio.preload = "auto";
+    backgroundAudio.volume = BACKGROUND_MUSIC_VOLUME;
+    backgroundAudio.muted = isAudioMuted;
+    backgroundAudioRef.current = backgroundAudio;
+
+    const clickAudio = new Audio(`${assetBaseUrl}sound_effect-click.wav`);
+    clickAudio.preload = "auto";
+    clickAudio.muted = isAudioMuted;
+    clickAudioRef.current = clickAudio;
+
+    return () => {
+      backgroundAudio.pause();
+      backgroundAudioRef.current = null;
+      clickAudioRef.current = null;
+      hasUnlockedAudioRef.current = false;
+    };
+  }, [assetBaseUrl]);
+
+  useEffect(() => {
+    if (backgroundAudioRef.current) {
+      backgroundAudioRef.current.muted = isAudioMuted;
+    }
+
+    if (clickAudioRef.current) {
+      clickAudioRef.current.muted = isAudioMuted;
+    }
+  }, [isAudioMuted]);
+
+  useEffect(() => {
+    const handleFirstInteraction = () => {
+      void unlockAudio().then((didUnlock) => {
+        if (!didUnlock) {
+          return;
+        }
+
+        window.removeEventListener("pointerdown", handleFirstInteraction);
+        window.removeEventListener("keydown", handleFirstInteraction);
+      });
+    };
+
+    window.addEventListener("pointerdown", handleFirstInteraction);
+    window.addEventListener("keydown", handleFirstInteraction);
+
+    return () => {
+      window.removeEventListener("pointerdown", handleFirstInteraction);
+      window.removeEventListener("keydown", handleFirstInteraction);
+    };
+  }, [unlockAudio]);
 
   const handleResetGraph = () => {
     resetGraph();
@@ -60,6 +161,7 @@ function App() {
     hasGraph,
     onFitGraph: fitGraph,
     onResetGraph: handleResetGraph,
+    onToggleAudioMuted: toggleAudioMuted,
     onTogglePause: togglePause,
   });
 
@@ -117,7 +219,9 @@ function App() {
           <LayoutControlsPanel
             panelRef={controlsPanelRef}
             assetBaseUrl={assetBaseUrl}
+            isAudioMuted={isAudioMuted}
             onToggleOpen={toggleControls}
+            onToggleAudioMuted={toggleAudioMuted}
             onTogglePause={togglePause}
             onReset={resetLayoutSettings}
           />

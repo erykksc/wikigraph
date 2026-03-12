@@ -32,7 +32,7 @@
   - React components render the UI and call into hooks.
   - `src/hooks/` adapts React state/events to the imperative graph controller.
 - Shared cross-component UI state is stored in Zustand via `src/store/useAppStore.ts`.
-- Zustand currently holds search state, spotlight visibility, controls visibility, layout settings, pause state, loading/count state, and status toast state.
+- Zustand currently holds search state, spotlight visibility, controls visibility, audio mute state, layout settings, pause state, loading/count state, and status toast state.
 - Styling uses CSS Modules for component-scoped styles and a small global stylesheet for app-wide concerns.
 - Keep component styles colocated next to components as `*.module.css`; avoid adding new large global selector blocks to `src/styles.css`.
 - Use `src/styles.css` only for global fonts, CSS variables/design tokens, reset rules, and app-wide page background/layout primitives.
@@ -48,7 +48,7 @@
   - Should not depend on React component state directly.
 - `src/store/useAppStore.ts`
   - Owns shared app/UI state used across multiple components or hooks.
-  - Current examples: search seed, selected Wikipedia language, spotlight visibility, controls visibility, layout settings, paused state, loading flag, node/edge counts, and toast state.
+  - Current examples: search seed, selected Wikipedia language, spotlight visibility, controls visibility, audio mute state, layout settings, paused state, loading flag, node/edge counts, and toast state.
 - `src/hooks/`
   - Own side effects and coordination logic that bridge React and external systems.
   - Examples: controller setup/teardown, hotkeys, toast timers, media-query handling, and syncing layout settings into the graph controller.
@@ -58,6 +58,7 @@
 - `src/App.tsx`
   - Should not become a second state store.
   - Prefer reading shared state from Zustand and delegating behavior to hooks/components rather than recreating cross-cutting state in `App.tsx`.
+  - Owns persistent browser audio objects and first-interaction audio unlock behavior for background music and expansion sound effects.
 
 ## Styling Conventions
 

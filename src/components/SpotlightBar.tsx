@@ -499,6 +499,9 @@ const SpotlightBar = ({
                 <kbd>,</kbd> opens graph layout settings.
               </p>
               <p>
+                <kbd>m</kbd> mutes or unmutes app audio.
+              </p>
+              <p>
                 <kbd>f</kbd> fits the graph, and <kbd>space</kbd> pauses or
                 resumes the layout.
               </p>

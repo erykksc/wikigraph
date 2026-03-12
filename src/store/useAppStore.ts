@@ -15,6 +15,7 @@ type AppStore = {
   querySource: WikipediaLanguage;
   spotlightOpen: boolean;
   controlsOpen: boolean;
+  isAudioMuted: boolean;
   layoutSettings: ForceAtlas2Settings;
   isPaused: boolean;
   isLoading: boolean;
@@ -30,6 +31,7 @@ type AppStore = {
   closeControls: () => void;
   setControlsOpen: (open: boolean) => void;
   toggleControls: () => void;
+  toggleAudioMuted: () => void;
   setLayoutBoolean: (key: keyof ForceAtlas2Settings, value: boolean) => void;
   setLayoutNumber: (key: keyof ForceAtlas2Settings, value: number) => void;
   resetLayoutSettings: () => void;
@@ -54,6 +56,7 @@ export const useAppStore = create<AppStore>((set) => ({
   querySource: "en",
   spotlightOpen: true,
   controlsOpen: false,
+  isAudioMuted: false,
   layoutSettings: { ...defaultLayoutSettings },
   isPaused: false,
   isLoading: false,
@@ -69,6 +72,8 @@ export const useAppStore = create<AppStore>((set) => ({
   closeControls: () => set({ controlsOpen: false }),
   setControlsOpen: (controlsOpen) => set({ controlsOpen }),
   toggleControls: () => set((state) => ({ controlsOpen: !state.controlsOpen })),
+  toggleAudioMuted: () =>
+    set((state) => ({ isAudioMuted: !state.isAudioMuted })),
   setLayoutBoolean: (key, value) =>
     set((state) => ({
       layoutSettings: { ...state.layoutSettings, [key]: value },

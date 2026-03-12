@@ -6,7 +6,9 @@ import styles from "./LayoutControlsPanel.module.css";
 type LayoutControlsPanelProps = {
   panelRef: React.RefObject<HTMLElement | null>;
   assetBaseUrl: string;
+  isAudioMuted: boolean;
   onToggleOpen: () => void;
+  onToggleAudioMuted: () => void;
   onTogglePause: () => void;
   onReset: () => void;
 };
@@ -14,7 +16,9 @@ type LayoutControlsPanelProps = {
 const LayoutControlsPanel = ({
   panelRef,
   assetBaseUrl,
+  isAudioMuted,
   onToggleOpen,
+  onToggleAudioMuted,
   onTogglePause,
   onReset,
 }: LayoutControlsPanelProps) => {
@@ -33,6 +37,25 @@ const LayoutControlsPanel = ({
         {open ? (
           <div className={styles.title}>Graph Layout Settings</div>
         ) : null}
+        <button
+          type="button"
+          className={styles.toggleButton}
+          onClick={onToggleAudioMuted}
+          title={
+            isAudioMuted
+              ? "Unmute app audio\n\nshortcut: m"
+              : "Mute app audio\n\nshortcut: m"
+          }
+          aria-label={isAudioMuted ? "Unmute app audio" : "Mute app audio"}
+          aria-pressed={isAudioMuted}
+        >
+          <img
+            className={styles.audioIcon}
+            src={`${assetBaseUrl}${isAudioMuted ? "speaker-off.svg" : "speaker-on.svg"}`}
+            alt=""
+            aria-hidden="true"
+          />
+        </button>
         <button
           type="button"
           className={cn(styles.toggleButton, styles.pauseToggle)}

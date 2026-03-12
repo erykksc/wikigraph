@@ -5,6 +5,7 @@ type UseAppHotkeysParams = {
   hasGraph: boolean;
   onFitGraph: () => void;
   onResetGraph: () => void;
+  onToggleAudioMuted: () => void;
   onTogglePause: () => void;
 };
 
@@ -12,6 +13,7 @@ export function useAppHotkeys({
   hasGraph,
   onFitGraph,
   onResetGraph,
+  onToggleAudioMuted,
   onTogglePause,
 }: UseAppHotkeysParams) {
   const spotlightOpen = useAppStore((state) => state.spotlightOpen);
@@ -97,6 +99,16 @@ export function useAppHotkeys({
           openControls();
         }
       }
+
+      if (
+        event.key.toLowerCase() === "m" &&
+        !event.altKey &&
+        !event.metaKey &&
+        !event.ctrlKey
+      ) {
+        event.preventDefault();
+        onToggleAudioMuted();
+      }
     };
 
     window.addEventListener("keydown", handleKeyDown);
@@ -107,6 +119,7 @@ export function useAppHotkeys({
     hasGraph,
     onFitGraph,
     onResetGraph,
+    onToggleAudioMuted,
     onTogglePause,
     openControls,
     openSpotlight,
