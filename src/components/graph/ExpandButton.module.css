@@ -20,6 +20,10 @@
 .articleButton,
 .wikipediaButton,
 .expandButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
   appearance: none;
   border: 0;
   font: inherit;
@@ -36,9 +40,6 @@
 }
 
 .articleButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   color: #111111;
   background: linear-gradient(180deg, #ffffff, #f1f1f1);
 }
@@ -93,6 +94,13 @@
   flex: 1 1 50%;
 }
 
+.icon {
+  width: 1.8rem;
+  height: 1.8rem;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
 @media (max-width: 800px) {
   .articleButton,
   .buttonGroup {
@@ -103,8 +111,14 @@
   .articleButton,
   .wikipediaButton,
   .expandButton {
+    gap: 0.45rem;
     padding: 0 1rem;
     font-size: 0.94rem;
+  }
+
+  .icon {
+    width: 1.8rem;
+    height: 1.8rem;
   }
 }
 

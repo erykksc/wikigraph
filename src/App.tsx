@@ -231,6 +231,7 @@ function App() {
               <StatusToast />
               {shouldShowExpandButton ? (
                 <ExpandButton
+                  assetBaseUrl={assetBaseUrl}
                   selectedTitle={selectedNode.title}
                   isExpanded={selectedNode.expanded}
                   onOpenArticle={openSelectedArticle}

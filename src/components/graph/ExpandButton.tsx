@@ -1,6 +1,7 @@
 import styles from "./ExpandButton.module.css";
 
 type ExpandButtonProps = {
+  assetBaseUrl: string;
   selectedTitle?: string;
   isExpanded?: boolean;
   onOpenArticle: () => void;
@@ -8,6 +9,7 @@ type ExpandButtonProps = {
 };
 
 const ExpandButton = ({
+  assetBaseUrl,
   selectedTitle,
   isExpanded = false,
   onOpenArticle,
@@ -27,6 +29,12 @@ const ExpandButton = ({
           aria-label="Open selected node on Wikipedia"
           title={wikipediaTitle}
         >
+          <img
+            className={styles.icon}
+            src={`${assetBaseUrl}wikipedia-logo.svg`}
+            alt=""
+            aria-hidden="true"
+          />
           Wikipedia
         </button>
       ) : (
@@ -42,6 +50,12 @@ const ExpandButton = ({
             aria-label="Open selected node on Wikipedia"
             title={wikipediaTitle}
           >
+            <img
+              className={styles.icon}
+              src={`${assetBaseUrl}wikipedia-logo.svg`}
+              alt=""
+              aria-hidden="true"
+            />
             Wikipedia
           </button>
           <button
@@ -51,6 +65,12 @@ const ExpandButton = ({
             aria-label="Expand selected node"
             title={expandTitle}
           >
+            <img
+              className={styles.icon}
+              src={`${assetBaseUrl}expand.svg`}
+              alt=""
+              aria-hidden="true"
+            />
             Expand
           </button>
         </div>
