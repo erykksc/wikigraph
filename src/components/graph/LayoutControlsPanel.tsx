@@ -1,6 +1,10 @@
 import { cn } from "../../cn";
 import { layoutControls } from "../../layout-config";
 import { useAppStore } from "../../store/useAppStore";
+import AudioToggleButton from "./AudioToggleButton";
+import LayoutResetButton from "./LayoutResetButton";
+import PauseToggleButton from "./PauseToggleButton";
+import SettingsToggleButton from "./SettingsToggleButton";
 import styles from "./LayoutControlsPanel.module.css";
 
 type LayoutControlsPanelProps = {
@@ -33,63 +37,27 @@ const LayoutControlsPanel = ({
       ref={panelRef}
       className={cn(styles.root, !open && styles.isCollapsed)}
     >
-      <div className={cn(styles.header, open && styles.isExpanded)}>
+      <div className={styles.header}>
         {open ? (
           <div className={styles.title}>Graph Layout Settings</div>
         ) : null}
-        <button
-          type="button"
-          className={styles.toggleButton}
-          onClick={onToggleAudioMuted}
-          title={
-            isAudioMuted
-              ? "Unmute app audio\n\nshortcut: m"
-              : "Mute app audio\n\nshortcut: m"
-          }
-          aria-label={isAudioMuted ? "Unmute app audio" : "Mute app audio"}
-          aria-pressed={isAudioMuted}
-        >
-          <img
-            className={styles.audioIcon}
-            src={`${assetBaseUrl}${isAudioMuted ? "speaker-off.svg" : "speaker-on.svg"}`}
-            alt=""
-            aria-hidden="true"
+        <div className={styles.headerActions}>
+          <AudioToggleButton
+            assetBaseUrl={assetBaseUrl}
+            isAudioMuted={isAudioMuted}
+            onToggleAudioMuted={onToggleAudioMuted}
           />
-        </button>
-        <button
-          type="button"
-          className={cn(styles.toggleButton, styles.pauseToggle)}
-          onClick={onTogglePause}
-          title={
-            isPaused
-              ? "Resume the graph layout simulation\n\nshortcut: space"
-              : "Pause the graph layout simulation\n\nshortcut: space"
-          }
-          aria-label={isPaused ? "Resume graph layout" : "Pause graph layout"}
-          aria-pressed={isPaused}
-        >
-          <img
-            src={`${assetBaseUrl}${isPaused ? "play.svg" : "pause.svg"}`}
-            alt=""
-            aria-hidden="true"
+          <PauseToggleButton
+            assetBaseUrl={assetBaseUrl}
+            isPaused={isPaused}
+            onTogglePause={onTogglePause}
           />
-        </button>
-        <button
-          type="button"
-          className={cn(styles.toggleButton, styles.settingsToggle)}
-          onClick={onToggleOpen}
-          title={
-            open
-              ? "Hide the graph layout controls\n\nshortcut: ,"
-              : "Show the graph layout controls\n\nshortcut: ,"
-          }
-          aria-label={
-            open ? "Close graph layout settings" : "Open graph layout settings"
-          }
-          aria-expanded={open}
-        >
-          <img src={`${assetBaseUrl}cog.svg`} alt="" aria-hidden="true" />
-        </button>
+          <SettingsToggleButton
+            assetBaseUrl={assetBaseUrl}
+            open={open}
+            onToggleOpen={onToggleOpen}
+          />
+        </div>
       </div>
       {open ? (
         <div className={cn(styles.content, isPaused && styles.isPaused)}>
@@ -147,17 +115,11 @@ const LayoutControlsPanel = ({
               </label>
             );
           })}
-          <button
-            type="button"
-            className={styles.reset}
-            onClick={onReset}
-            aria-label="Reset layout settings to default"
-            title="Restore the layout controls to their default values"
+          <LayoutResetButton
+            assetBaseUrl={assetBaseUrl}
             disabled={isPaused}
-          >
-            <span>Reset to default</span>
-            <img src={`${assetBaseUrl}reset.svg`} alt="" aria-hidden="true" />
-          </button>
+            onReset={onReset}
+          />
         </div>
       ) : null}
     </aside>

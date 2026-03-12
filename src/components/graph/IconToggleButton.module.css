@@ -1,0 +1,47 @@
+.root {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    transform 0.2s ease,
+    color 0.2s ease;
+}
+
+.root:hover {
+  transform: translateY(-2px);
+  color: var(--text);
+}
+
+.root:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.root:focus-visible {
+  outline: 2px solid rgba(86, 204, 242, 0.7);
+  outline-offset: 2px;
+}
+
+.icon {
+  width: 32px;
+  height: 32px;
+  display: block;
+  filter: invert(88%) sepia(5%) saturate(347%) hue-rotate(176deg)
+    brightness(104%) contrast(92%);
+}
+
+.isWhite {
+  filter: brightness(0) invert(1);
+}
+
+.isCompact {
+  width: 25px;
+  height: 25px;
+}

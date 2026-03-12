@@ -6,6 +6,7 @@ import {
 } from "../api";
 import { cn } from "../cn";
 import { useAppStore } from "../store/useAppStore";
+import AudioToggleButton from "./graph/AudioToggleButton";
 import styles from "./SpotlightBar.module.css";
 
 const SUGGESTIONS_DEBOUNCE_MS = 350;
@@ -20,21 +21,26 @@ const resetInstructionsLayout = (
 };
 
 type SpotlightBarProps = {
+  assetBaseUrl: string;
   open: boolean;
   hasGraph: boolean;
   isLoading: boolean;
+  isAudioMuted: boolean;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+  onToggleAudioMuted: () => void;
   onRequestClose: () => void;
 };
 
 const SpotlightBar = ({
+  assetBaseUrl,
   open,
   hasGraph,
   isLoading,
+  isAudioMuted,
   onSubmit,
+  onToggleAudioMuted,
   onRequestClose,
 }: SpotlightBarProps) => {
-  const assetBaseUrl = import.meta.env.BASE_URL;
   const seed = useAppStore((state) => state.seed);
   const querySource = useAppStore((state) => state.querySource);
   const setSeed = useAppStore((state) => state.setSeed);
@@ -229,10 +235,264 @@ const SpotlightBar = ({
 
   if (!open) return null;
 
+  const searchCard = (
+    <div className={styles.card}>
+      <form className={styles.form} onSubmit={onSubmit}>
+        <div className={cn(styles.row, styles.rowWrap)}>
+          <div className={styles.inputGroup}>
+            <input
+              className={styles.input}
+              ref={seedInputRef}
+              type="text"
+              value={seed}
+              onChange={(event) => setSeed(event.target.value)}
+              onFocus={() => {
+                if (suggestions.length > 0 || isSuggestionsLoading) {
+                  setIsSuggestionsOpen(true);
+                }
+              }}
+              onBlur={() => {
+                window.setTimeout(() => {
+                  if (document.activeElement !== seedInputRef.current) {
+                    closeSuggestions();
+                  }
+                }, 0);
+              }}
+              onKeyDown={(event) => {
+                if (!shouldShowSuggestions || suggestions.length === 0) {
+                  if (event.key === "Escape") {
+                    event.stopPropagation();
+                    closeSuggestions();
+                  }
+                  return;
+                }
+
+                if (event.key === "ArrowDown") {
+                  event.preventDefault();
+                  setHighlightedSuggestionIndex((current) =>
+                    current >= suggestions.length - 1 ? 0 : current + 1,
+                  );
+                  return;
+                }
+
+                if (event.key === "ArrowUp") {
+                  event.preventDefault();
+                  setHighlightedSuggestionIndex((current) =>
+                    current <= 0 ? suggestions.length - 1 : current - 1,
+                  );
+                  return;
+                }
+
+                if (event.key === "Enter") {
+                  const highlightedSuggestion =
+                    suggestions[highlightedSuggestionIndex];
+
+                  if (highlightedSuggestion) {
+                    event.preventDefault();
+                    submitSuggestion(highlightedSuggestion);
+                  }
+                  return;
+                }
+
+                if (event.key === "Escape") {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  closeSuggestions();
+                }
+              }}
+              placeholder="Wikipedia article title e.g. Bytom or Graph theory"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded={shouldShowSuggestions}
+              aria-controls={suggestionListId}
+              aria-activedescendant={
+                highlightedSuggestionIndex >= 0
+                  ? `${suggestionListId}-${highlightedSuggestionIndex}`
+                  : undefined
+              }
+            />
+            {shouldShowSuggestions ? (
+              <div className={styles.suggestionsPanel}>
+                <ul
+                  className={styles.suggestionsList}
+                  id={suggestionListId}
+                  role="listbox"
+                >
+                  {isSuggestionsLoading ? (
+                    <li className={styles.suggestionsStatus}>
+                      Searching articles...
+                    </li>
+                  ) : null}
+                  {suggestions.map((suggestion, index) => (
+                    <li key={suggestion} role="presentation">
+                      <button
+                        type="button"
+                        id={`${suggestionListId}-${index}`}
+                        className={cn(
+                          styles.suggestionButton,
+                          index === highlightedSuggestionIndex &&
+                            styles.isSuggestionActive,
+                        )}
+                        onMouseDown={(event) => event.preventDefault()}
+                        onMouseEnter={() =>
+                          setHighlightedSuggestionIndex(index)
+                        }
+                        onClick={() => submitSuggestion(suggestion)}
+                        role="option"
+                        aria-selected={index === highlightedSuggestionIndex}
+                      >
+                        {suggestion}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </div>
+          <select
+            className={styles.select}
+            value={querySource}
+            onChange={(event) =>
+              setQuerySource(event.target.value as WikipediaLanguage)
+            }
+            aria-label="Query source"
+          >
+            {WIKIPEDIA_LANGUAGES.map((language) => (
+              <option key={language.code} value={language.code}>
+                {language.flag} {language.label} ({language.code}
+                .wikipedia.org)
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className={cn(styles.row, styles.rowCenter)}>
+          <button
+            type="submit"
+            className={styles.submitButton}
+            disabled={isLoading}
+          >
+            {isLoading ? "Loading..." : "Grow Graph"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+
+  const instructions = isEmptyState ? (
+    <details className={styles.instructions} open={instructionsOpen}>
+      <summary
+        className={styles.instructionsSummary}
+        onClick={(event) => {
+          event.preventDefault();
+          setInstructionsOpen((current) => !current);
+        }}
+      >
+        How WikiGraph works?
+      </summary>
+      <div
+        ref={instructionsContentRef}
+        className={styles.instructionsContent}
+        style={
+          effectiveInstructionsMaxHeight === null
+            ? undefined
+            : { maxHeight: `${effectiveInstructionsMaxHeight}px` }
+        }
+      >
+        <section className={styles.instructionsSection}>
+          <h2>Getting Started</h2>
+          <p>
+            Enter a Wikipedia article title and click Grow Graph or press
+            'enter'.
+          </p>
+        </section>
+
+        <section className={styles.instructionsSection}>
+          <h2>Exploring the Graph</h2>
+          <p>
+            Left click any node{" "}
+            <span
+              className={cn(styles.nodeDot, styles.nodeDotUnexpanded)}
+              aria-hidden="true"
+            >
+              {"\u2b24"}
+            </span>{" "}
+            to expand it and reveal related articles.
+          </p>
+          <p>
+            Right click any node to open its Wikipedia article in a new tab.
+          </p>
+        </section>
+
+        <section className={styles.instructionsSection}>
+          <h2>Node Colors</h2>
+          <p>
+            <span
+              className={cn(styles.nodeDot, styles.nodeDotCool)}
+              aria-hidden="true"
+            >
+              {"\u2b24"}
+            </span>{" "}
+            <strong>Few neighbors</strong>: nodes start light blue when they
+            only have a small number of connections.
+          </p>
+          <p>
+            <span
+              className={cn(styles.nodeDot, styles.nodeDotMid)}
+              aria-hidden="true"
+            >
+              {"\u2b24"}
+            </span>{" "}
+            <strong>More neighbors</strong>: the color shifts through green as
+            the node becomes more connected.
+          </p>
+          <p>
+            <span
+              className={cn(styles.nodeDot, styles.nodeDotWarm)}
+              aria-hidden="true"
+            >
+              {"\u2b24"}
+            </span>{" "}
+            <strong>Many neighbors</strong>: highly connected nodes become
+            yellow or amber.
+          </p>
+          <p>
+            <span
+              className={cn(styles.nodeDot, styles.nodeDotExpanded)}
+              aria-hidden="true"
+            >
+              {"\u2b24"}
+            </span>{" "}
+            <strong>Expanded nodes</strong>: dark purple means the node has
+            already been expanded.
+          </p>
+        </section>
+
+        <section className={styles.instructionsSection}>
+          <h2>Shortcuts</h2>
+          <p>
+            <kbd>/</kbd> or <kbd>cmd</kbd>/<kbd>ctrl</kbd>+<kbd>k</kbd> opens
+            search.
+          </p>
+          <p>
+            <kbd>,</kbd> opens graph layout settings.
+          </p>
+          <p>
+            <kbd>m</kbd> mutes or unmutes app audio.
+          </p>
+          <p>
+            <kbd>f</kbd> fits the graph, and <kbd>space</kbd> pauses or resumes
+            the layout.
+          </p>
+        </section>
+      </div>
+    </details>
+  ) : null;
+
   return (
     <div
       className={cn(
         styles.root,
+        isEmptyState && styles.isEmptyState,
         effectiveInstructionsNeedScroll && styles.isOverflowing,
       )}
       onMouseDown={(event) => {
@@ -242,273 +502,39 @@ const SpotlightBar = ({
       }}
     >
       {isEmptyState ? (
-        <div className={styles.hero}>
-          <h1 className={styles.title}>WikiGraph</h1>
-          <a
-            className={styles.subtitle}
-            href="https://github.com/erykksc/wikigraph"
-            target="_blank"
-            rel="noreferrer"
-          >
-            By Eryk Kściuczyk
-            <img
-              className={styles.subtitleIcon}
-              src={`${assetBaseUrl}GitHub_Invertocat_White.svg`}
-              alt=""
-              aria-hidden="true"
+        <div className={styles.emptyStateLayout}>
+          <div className={styles.topActions}>
+            <AudioToggleButton
+              assetBaseUrl={assetBaseUrl}
+              isAudioMuted={isAudioMuted}
+              onToggleAudioMuted={onToggleAudioMuted}
             />
-          </a>
-        </div>
-      ) : null}
-      <div className={styles.card}>
-        <form className={styles.form} onSubmit={onSubmit}>
-          <div className={cn(styles.row, styles.rowWrap)}>
-            <div className={styles.inputGroup}>
-              <input
-                className={styles.input}
-                ref={seedInputRef}
-                type="text"
-                value={seed}
-                onChange={(event) => setSeed(event.target.value)}
-                onFocus={() => {
-                  if (suggestions.length > 0 || isSuggestionsLoading) {
-                    setIsSuggestionsOpen(true);
-                  }
-                }}
-                onBlur={() => {
-                  window.setTimeout(() => {
-                    if (document.activeElement !== seedInputRef.current) {
-                      closeSuggestions();
-                    }
-                  }, 0);
-                }}
-                onKeyDown={(event) => {
-                  if (!shouldShowSuggestions || suggestions.length === 0) {
-                    if (event.key === "Escape") {
-                      event.stopPropagation();
-                      closeSuggestions();
-                    }
-                    return;
-                  }
-
-                  if (event.key === "ArrowDown") {
-                    event.preventDefault();
-                    setHighlightedSuggestionIndex((current) =>
-                      current >= suggestions.length - 1 ? 0 : current + 1,
-                    );
-                    return;
-                  }
-
-                  if (event.key === "ArrowUp") {
-                    event.preventDefault();
-                    setHighlightedSuggestionIndex((current) =>
-                      current <= 0 ? suggestions.length - 1 : current - 1,
-                    );
-                    return;
-                  }
-
-                  if (event.key === "Enter") {
-                    const highlightedSuggestion =
-                      suggestions[highlightedSuggestionIndex];
-
-                    if (highlightedSuggestion) {
-                      event.preventDefault();
-                      submitSuggestion(highlightedSuggestion);
-                    }
-                    return;
-                  }
-
-                  if (event.key === "Escape") {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    closeSuggestions();
-                  }
-                }}
-                placeholder="Wikipedia article title e.g. Bytom or Graph theory"
-                role="combobox"
-                aria-autocomplete="list"
-                aria-expanded={shouldShowSuggestions}
-                aria-controls={suggestionListId}
-                aria-activedescendant={
-                  highlightedSuggestionIndex >= 0
-                    ? `${suggestionListId}-${highlightedSuggestionIndex}`
-                    : undefined
-                }
-              />
-              {shouldShowSuggestions ? (
-                <div className={styles.suggestionsPanel}>
-                  <ul
-                    className={styles.suggestionsList}
-                    id={suggestionListId}
-                    role="listbox"
-                  >
-                    {isSuggestionsLoading ? (
-                      <li className={styles.suggestionsStatus}>
-                        Searching articles...
-                      </li>
-                    ) : null}
-                    {suggestions.map((suggestion, index) => (
-                      <li key={suggestion} role="presentation">
-                        <button
-                          type="button"
-                          id={`${suggestionListId}-${index}`}
-                          className={cn(
-                            styles.suggestionButton,
-                            index === highlightedSuggestionIndex &&
-                              styles.isSuggestionActive,
-                          )}
-                          onMouseDown={(event) => event.preventDefault()}
-                          onMouseEnter={() =>
-                            setHighlightedSuggestionIndex(index)
-                          }
-                          onClick={() => submitSuggestion(suggestion)}
-                          role="option"
-                          aria-selected={index === highlightedSuggestionIndex}
-                        >
-                          {suggestion}
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
+          </div>
+          <div className={styles.emptyStateCenter}>
+            <div className={styles.hero}>
+              <h1 className={styles.title}>WikiGraph</h1>
+              <a
+                className={styles.subtitle}
+                href="https://github.com/erykksc/wikigraph"
+                target="_blank"
+                rel="noreferrer"
+              >
+                By Eryk Kściuczyk
+                <img
+                  className={styles.subtitleIcon}
+                  src={`${assetBaseUrl}GitHub_Invertocat_White.svg`}
+                  alt=""
+                  aria-hidden="true"
+                />
+              </a>
             </div>
-            <select
-              className={styles.select}
-              value={querySource}
-              onChange={(event) =>
-                setQuerySource(event.target.value as WikipediaLanguage)
-              }
-              aria-label="Query source"
-            >
-              {WIKIPEDIA_LANGUAGES.map((language) => (
-                <option key={language.code} value={language.code}>
-                  {language.flag} {language.label} ({language.code}
-                  .wikipedia.org)
-                </option>
-              ))}
-            </select>
+            {searchCard}
           </div>
-          <div className={cn(styles.row, styles.rowCenter)}>
-            <button
-              type="submit"
-              className={styles.submitButton}
-              disabled={isLoading}
-            >
-              {isLoading ? "Loading..." : "Grow Graph"}
-            </button>
-          </div>
-        </form>
-      </div>
-      {isEmptyState ? (
-        <details className={styles.instructions} open={instructionsOpen}>
-          <summary
-            className={styles.instructionsSummary}
-            onClick={(event) => {
-              event.preventDefault();
-              setInstructionsOpen((current) => !current);
-            }}
-          >
-            How WikiGraph works?
-          </summary>
-          <div
-            ref={instructionsContentRef}
-            className={styles.instructionsContent}
-            style={
-              effectiveInstructionsMaxHeight === null
-                ? undefined
-                : { maxHeight: `${effectiveInstructionsMaxHeight}px` }
-            }
-          >
-            <section className={styles.instructionsSection}>
-              <h2>Getting Started</h2>
-              <p>
-                Enter a Wikipedia article title and click Grow Graph or press
-                'enter'.
-              </p>
-            </section>
-
-            <section className={styles.instructionsSection}>
-              <h2>Exploring the Graph</h2>
-              <p>
-                Left click any node{" "}
-                <span
-                  className={cn(styles.nodeDot, styles.nodeDotUnexpanded)}
-                  aria-hidden="true"
-                >
-                  {"\u2b24"}
-                </span>{" "}
-                to expand it and reveal related articles.
-              </p>
-              <p>
-                Right click any node to open its Wikipedia article in a new tab.
-              </p>
-            </section>
-
-            <section className={styles.instructionsSection}>
-              <h2>Node Colors</h2>
-              <p>
-                <span
-                  className={cn(styles.nodeDot, styles.nodeDotCool)}
-                  aria-hidden="true"
-                >
-                  {"\u2b24"}
-                </span>{" "}
-                <strong>Few neighbors</strong>: nodes start light blue when they
-                only have a small number of connections.
-              </p>
-              <p>
-                <span
-                  className={cn(styles.nodeDot, styles.nodeDotMid)}
-                  aria-hidden="true"
-                >
-                  {"\u2b24"}
-                </span>{" "}
-                <strong>More neighbors</strong>: the color shifts through green
-                as the node becomes more connected.
-              </p>
-              <p>
-                <span
-                  className={cn(styles.nodeDot, styles.nodeDotWarm)}
-                  aria-hidden="true"
-                >
-                  {"\u2b24"}
-                </span>{" "}
-                <strong>Many neighbors</strong>: highly connected nodes become
-                yellow or amber.
-              </p>
-              <p>
-                <span
-                  className={cn(styles.nodeDot, styles.nodeDotExpanded)}
-                  aria-hidden="true"
-                >
-                  {"\u2b24"}
-                </span>{" "}
-                <strong>Expanded nodes</strong>: dark purple means the node has
-                already been expanded.
-              </p>
-            </section>
-
-            <section className={styles.instructionsSection}>
-              <h2>Shortcuts</h2>
-              <p>
-                <kbd>/</kbd> or <kbd>cmd</kbd>/<kbd>ctrl</kbd>+<kbd>k</kbd>{" "}
-                opens search.
-              </p>
-              <p>
-                <kbd>,</kbd> opens graph layout settings.
-              </p>
-              <p>
-                <kbd>m</kbd> mutes or unmutes app audio.
-              </p>
-              <p>
-                <kbd>f</kbd> fits the graph, and <kbd>space</kbd> pauses or
-                resumes the layout.
-              </p>
-            </section>
-          </div>
-        </details>
-      ) : null}
+          {instructions}
+        </div>
+      ) : (
+        searchCard
+      )}
     </div>
   );
 };

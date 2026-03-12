@@ -17,7 +17,7 @@
   - `src/graph.ts` - Sigma/Graphology controller and interactions
   - `src/api/` - Wikipedia fetch logic
   - `src/components/` - UI building blocks, with colocated `*.module.css` files for component-scoped styles
-  - `src/components/graph/` - graph overlays, controls, and graph-adjacent UI, each with colocated CSS Modules where needed
+  - `src/components/graph/` - graph overlays, controls, and graph-adjacent UI, including small dedicated control-button components with colocated CSS Modules where needed
   - `src/hooks/` - React hooks for graph lifecycle, layout controls, hotkeys, overlays, and status handling
   - `src/store/useAppStore.ts` - Zustand store for shared app/UI state
   - `src/types.ts` - shared client data types

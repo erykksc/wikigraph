@@ -16,6 +16,31 @@
   justify-content: flex-start;
 }
 
+.isEmptyState {
+  display: block;
+}
+
+.emptyStateLayout {
+  width: 100%;
+  min-height: 100%;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: 1.2rem;
+}
+
+.topActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.emptyStateCenter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2rem;
+}
+
 .hero {
   display: flex;
   flex-direction: column;

@@ -191,10 +191,13 @@ function App() {
       <main className={styles.canvas}>
         <GraphCanvas containerRef={containerRef} />
         <SpotlightBar
+          assetBaseUrl={assetBaseUrl}
           open={!hasGraph || spotlightOpen}
           hasGraph={hasGraph}
           isLoading={isLoading}
+          isAudioMuted={isAudioMuted}
           onSubmit={handleSubmit}
+          onToggleAudioMuted={toggleAudioMuted}
           onRequestClose={() => {
             if (hasGraph) {
               closeSpotlight();
