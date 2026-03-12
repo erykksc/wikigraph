@@ -21,8 +21,8 @@ const AudioToggleButton = ({
       onClick={onToggleAudioMuted}
       title={
         isAudioMuted
-          ? "Unmute app audio\n\nshortcut: m"
-          : "Mute app audio\n\nshortcut: m"
+          ? "Unmute app audio\nMusic: Space Ambient by playstarz_music\n\nshortcut: m"
+          : "Mute app audio\nMusic: Space Ambient by playstarz_music\n\nshortcut: m"
       }
       aria-label={isAudioMuted ? "Unmute app audio" : "Mute app audio"}
       aria-pressed={isAudioMuted}
