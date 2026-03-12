@@ -12,6 +12,16 @@
   min-height: 0;
 }
 
+.spotlightOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  z-index: 3;
+}
+
 .bottomInfoStack {
   position: absolute;
   left: max(1.5rem, env(safe-area-inset-left));
@@ -40,6 +50,11 @@
 }
 
 @media (max-width: 800px) {
+  .spotlightOverlay {
+    padding: max(0.75rem, env(safe-area-inset-top)) 0.75rem
+      max(0.75rem, env(safe-area-inset-bottom));
+  }
+
   .bottomInfoStack {
     left: max(0.75rem, env(safe-area-inset-left));
     bottom: max(0.75rem, env(safe-area-inset-bottom));

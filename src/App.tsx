@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef, type FormEvent } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import styles from "./App.module.css";
+import SplashScreen from "./components/SplashScreen";
 import SpotlightBar from "./components/SpotlightBar";
 import GraphActions from "./components/graph/GraphActions";
 import GraphCanvas from "./components/graph/GraphCanvas";
@@ -181,8 +182,7 @@ function App() {
 
   const shouldShowExpandButton = !!selectedNode && !isLoading;
 
-  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const handleSeedSearch = async () => {
     const nextSeed = seed.trim();
 
     if (!nextSeed) {
@@ -206,20 +206,31 @@ function App() {
     <div className={styles.app}>
       <main className={styles.canvas}>
         <GraphCanvas containerRef={containerRef} />
-        <SpotlightBar
-          assetBaseUrl={assetBaseUrl}
-          open={!hasGraph || spotlightOpen}
-          hasGraph={hasGraph}
-          isLoading={isLoading}
-          isAudioMuted={isAudioMuted}
-          onSubmit={handleSubmit}
-          onToggleAudioMuted={toggleAudioMuted}
-          onRequestClose={() => {
-            if (hasGraph) {
-              closeSpotlight();
-            }
-          }}
-        />
+        {!hasGraph ? (
+          <SplashScreen
+            assetBaseUrl={assetBaseUrl}
+            isLoading={isLoading}
+            isAudioMuted={isAudioMuted}
+            onSearch={handleSeedSearch}
+            onToggleAudioMuted={toggleAudioMuted}
+          />
+        ) : null}
+        {hasGraph && spotlightOpen ? (
+          <div
+            className={styles.spotlightOverlay}
+            onMouseDown={(event) => {
+              if (event.currentTarget === event.target) {
+                closeSpotlight();
+              }
+            }}
+          >
+            <SpotlightBar
+              isLoading={isLoading}
+              onSearch={handleSeedSearch}
+              onClose={closeSpotlight}
+            />
+          </div>
+        ) : null}
         {hasGraph ? (
           <>
             <GraphActions

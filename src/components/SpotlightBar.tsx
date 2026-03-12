@@ -6,66 +6,32 @@ import {
 } from "../api";
 import { cn } from "../cn";
 import { useAppStore } from "../store/useAppStore";
-import AudioToggleButton from "./graph/AudioToggleButton";
 import styles from "./SpotlightBar.module.css";
 
 const SUGGESTIONS_DEBOUNCE_MS = 350;
 const MIN_SUGGESTION_QUERY_LENGTH = 2;
 
-const resetInstructionsLayout = (
-  setInstructionsMaxHeight: React.Dispatch<React.SetStateAction<number | null>>,
-  setInstructionsNeedScroll: React.Dispatch<React.SetStateAction<boolean>>,
-) => {
-  setInstructionsMaxHeight(null);
-  setInstructionsNeedScroll(false);
-};
-
 type SpotlightBarProps = {
-  assetBaseUrl: string;
-  open: boolean;
-  hasGraph: boolean;
   isLoading: boolean;
-  isAudioMuted: boolean;
-  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
-  onToggleAudioMuted: () => void;
-  onRequestClose: () => void;
+  onSearch: () => void;
+  onClose?: () => void;
 };
 
-const SpotlightBar = ({
-  assetBaseUrl,
-  open,
-  hasGraph,
-  isLoading,
-  isAudioMuted,
-  onSubmit,
-  onToggleAudioMuted,
-  onRequestClose,
-}: SpotlightBarProps) => {
+const SpotlightBar = ({ isLoading, onSearch, onClose }: SpotlightBarProps) => {
   const seed = useAppStore((state) => state.seed);
   const querySource = useAppStore((state) => state.querySource);
   const setSeed = useAppStore((state) => state.setSeed);
   const setQuerySource = useAppStore((state) => state.setQuerySource);
   const seedInputRef = useRef<HTMLInputElement | null>(null);
-  const instructionsContentRef = useRef<HTMLDivElement | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const skipNextSuggestionFetchRef = useRef<string | null>(null);
   const latestRequestRef = useRef(0);
   const suggestionListId = useId();
-  const isEmptyState = !hasGraph;
-  const [instructionsOpen, setInstructionsOpen] = useState(false);
-  const [instructionsMaxHeight, setInstructionsMaxHeight] = useState<
-    number | null
-  >(null);
-  const [instructionsNeedScroll, setInstructionsNeedScroll] = useState(false);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isSuggestionsOpen, setIsSuggestionsOpen] = useState(false);
   const [highlightedSuggestionIndex, setHighlightedSuggestionIndex] =
     useState(-1);
   const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
-  const effectiveInstructionsMaxHeight =
-    isEmptyState && instructionsOpen ? instructionsMaxHeight : null;
-  const effectiveInstructionsNeedScroll =
-    isEmptyState && instructionsOpen ? instructionsNeedScroll : false;
   const trimmedSeed = seed.trim();
   const shouldShowSuggestions =
     isSuggestionsOpen &&
@@ -89,7 +55,6 @@ const SpotlightBar = ({
   );
 
   useEffect(() => {
-    if (!open) return;
     const handler = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         if (isSuggestionsOpen) {
@@ -97,24 +62,23 @@ const SpotlightBar = ({
           return;
         }
 
-        onRequestClose();
+        onClose?.();
       }
     };
+
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [closeSuggestions, isSuggestionsOpen, onRequestClose, open]);
+  }, [closeSuggestions, isSuggestionsOpen, onClose]);
 
   useEffect(() => {
-    if (open) {
-      seedInputRef.current?.focus();
-    }
-  }, [open]);
+    seedInputRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     abortControllerRef.current?.abort();
     abortControllerRef.current = null;
 
-    if (!open || trimmedSeed.length < MIN_SUGGESTION_QUERY_LENGTH) {
+    if (trimmedSeed.length < MIN_SUGGESTION_QUERY_LENGTH) {
       setSuggestions([]);
       setIsSuggestionsLoading(false);
       closeSuggestions();
@@ -177,7 +141,7 @@ const SpotlightBar = ({
       abortControllerRef.current?.abort();
       abortControllerRef.current = null;
     };
-  }, [closeSuggestions, open, querySource, trimmedSeed]);
+  }, [closeSuggestions, querySource, trimmedSeed]);
 
   useEffect(() => {
     return () => {
@@ -185,56 +149,15 @@ const SpotlightBar = ({
     };
   }, []);
 
-  useEffect(() => {
-    if (!isEmptyState || !instructionsOpen) {
-      queueMicrotask(() => {
-        resetInstructionsLayout(
-          setInstructionsMaxHeight,
-          setInstructionsNeedScroll,
-        );
-      });
-      return;
-    }
-
-    const updateInstructionsHeight = () => {
-      const content = instructionsContentRef.current;
-      if (!content) return;
-
-      content.style.maxHeight = "none";
-
-      const rect = content.getBoundingClientRect();
-      const viewportHeight =
-        window.visualViewport?.height ?? window.innerHeight;
-      const availableHeight = Math.max(
-        0,
-        Math.floor(viewportHeight - rect.top - 12),
-      );
-      const naturalHeight = content.scrollHeight;
-      const needsScroll = naturalHeight > availableHeight;
-
-      setInstructionsNeedScroll(needsScroll);
-      setInstructionsMaxHeight(needsScroll ? availableHeight : null);
-    };
-
-    const rafId = window.requestAnimationFrame(updateInstructionsHeight);
-    window.addEventListener("resize", updateInstructionsHeight);
-    window.visualViewport?.addEventListener("resize", updateInstructionsHeight);
-
-    return () => {
-      window.cancelAnimationFrame(rafId);
-      window.removeEventListener("resize", updateInstructionsHeight);
-      window.visualViewport?.removeEventListener(
-        "resize",
-        updateInstructionsHeight,
-      );
-    };
-  }, [instructionsOpen, isEmptyState]);
-
-  if (!open) return null;
-
-  const searchCard = (
+  return (
     <div className={styles.card}>
-      <form className={styles.form} onSubmit={onSubmit}>
+      <form
+        className={styles.form}
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSearch();
+        }}
+      >
         <div className={cn(styles.row, styles.rowWrap)}>
           <div className={styles.inputGroup}>
             <input
@@ -372,204 +295,6 @@ const SpotlightBar = ({
           </button>
         </div>
       </form>
-    </div>
-  );
-
-  const instructions = isEmptyState ? (
-    <details className={styles.instructions} open={instructionsOpen}>
-      <summary
-        className={styles.instructionsSummary}
-        onClick={(event) => {
-          event.preventDefault();
-          setInstructionsOpen((current) => !current);
-        }}
-      >
-        How WikiGraph works?
-      </summary>
-      <div
-        ref={instructionsContentRef}
-        className={styles.instructionsContent}
-        style={
-          effectiveInstructionsMaxHeight === null
-            ? undefined
-            : { maxHeight: `${effectiveInstructionsMaxHeight}px` }
-        }
-      >
-        <section className={styles.instructionsSection}>
-          <h2>Getting Started</h2>
-          <p>
-            Enter a Wikipedia article title and click Grow Graph or press
-            <kbd>enter</kbd>.
-          </p>
-        </section>
-
-        <section className={styles.instructionsSection}>
-          <h2>Exploring the Graph</h2>
-          <p>
-            Left click
-            <img
-              className={styles.instructionIcon}
-              src={`${assetBaseUrl}mouse-click-left.svg`}
-              alt=""
-              aria-hidden="true"
-            />
-            any node{" "}
-            <span
-              className={cn(styles.nodeDot, styles.nodeDotCool)}
-              aria-hidden="true"
-            >
-              {"\u2b24"}
-            </span>{" "}
-            to select it. Then use the Wikipedia or Expand button.
-          </p>
-          <p>
-            Double click
-            <img
-              className={styles.instructionIcon}
-              src={`${assetBaseUrl}mouse-click-left.svg`}
-              alt=""
-              aria-hidden="true"
-            />
-            <img
-              className={styles.instructionIcon}
-              src={`${assetBaseUrl}mouse-click-left.svg`}
-              alt=""
-              aria-hidden="true"
-            />
-            any unexpanded node to expand it immediately and reveal related
-            articles.
-          </p>
-          <p>
-            Right click
-            <img
-              className={styles.instructionIcon}
-              src={`${assetBaseUrl}mouse-click-right.svg`}
-              alt=""
-              aria-hidden="true"
-            />
-            any node to open its Wikipedia article in a new tab.
-          </p>
-        </section>
-
-        <section className={styles.instructionsSection}>
-          <h2>Node Colors</h2>
-          <p>
-            <span
-              className={cn(styles.nodeDot, styles.nodeDotCool)}
-              aria-hidden="true"
-            >
-              {"\u2b24"}
-            </span>{" "}
-            <strong>Few neighbors</strong>: nodes start light blue when they
-            only have a small number of connections.
-          </p>
-          <p>
-            <span
-              className={cn(styles.nodeDot, styles.nodeDotMid)}
-              aria-hidden="true"
-            >
-              {"\u2b24"}
-            </span>{" "}
-            <strong>More neighbors</strong>: the color shifts through green as
-            the node becomes more connected.
-          </p>
-          <p>
-            <span
-              className={cn(styles.nodeDot, styles.nodeDotWarm)}
-              aria-hidden="true"
-            >
-              {"\u2b24"}
-            </span>{" "}
-            <strong>Many neighbors</strong>: highly connected nodes become
-            yellow or amber.
-          </p>
-          <p>
-            <span
-              className={cn(styles.nodeDot, styles.nodeDotExpanded)}
-              aria-hidden="true"
-            >
-              {"\u2b24"}
-            </span>{" "}
-            <strong>Expanded nodes</strong>: dark purple means the node has
-            already been expanded.
-          </p>
-        </section>
-
-        <section className={styles.instructionsSection}>
-          <h2>Shortcuts</h2>
-          <p>
-            <kbd>/</kbd> or <kbd>cmd</kbd>/<kbd>ctrl</kbd>+<kbd>k</kbd> opens
-            search.
-          </p>
-          <p>
-            <kbd>w</kbd> opens the selected node on Wikipedia, and <kbd>e</kbd>
-            expands the selected unexpanded node.
-          </p>
-          <p>
-            <kbd>,</kbd> opens graph layout settings.
-          </p>
-          <p>
-            <kbd>m</kbd> mutes or unmutes app audio.
-          </p>
-          <p>
-            <kbd>f</kbd> fits the graph, and <kbd>space</kbd> pauses or resumes
-            the layout.
-          </p>
-          <p>
-            <kbd>r</kbd> resets the graph.
-          </p>
-        </section>
-      </div>
-    </details>
-  ) : null;
-
-  return (
-    <div
-      className={cn(
-        styles.root,
-        isEmptyState && styles.isEmptyState,
-        effectiveInstructionsNeedScroll && styles.isOverflowing,
-      )}
-      onMouseDown={(event) => {
-        if (event.currentTarget === event.target && hasGraph) {
-          onRequestClose();
-        }
-      }}
-    >
-      {isEmptyState ? (
-        <div className={styles.emptyStateLayout}>
-          <div className={styles.topActions}>
-            <AudioToggleButton
-              assetBaseUrl={assetBaseUrl}
-              isAudioMuted={isAudioMuted}
-              onToggleAudioMuted={onToggleAudioMuted}
-            />
-          </div>
-          <div className={styles.emptyStateCenter}>
-            <div className={styles.hero}>
-              <h1 className={styles.title}>WikiGraph</h1>
-              <a
-                className={styles.subtitle}
-                href="https://github.com/erykksc/wikigraph"
-                target="_blank"
-                rel="noreferrer"
-              >
-                By Eryk Kściuczyk
-                <img
-                  className={styles.subtitleIcon}
-                  src={`${assetBaseUrl}GitHub_Invertocat_White.svg`}
-                  alt=""
-                  aria-hidden="true"
-                />
-              </a>
-            </div>
-            {searchCard}
-          </div>
-          {instructions}
-        </div>
-      ) : (
-        searchCard
-      )}
     </div>
   );
 };

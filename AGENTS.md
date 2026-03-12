@@ -17,6 +17,8 @@
   - `src/graph.ts` - Sigma/Graphology controller and interactions
   - `src/api/` - Wikipedia fetch logic
   - `src/components/` - UI building blocks, with colocated `*.module.css` files for component-scoped styles
+  - `src/components/SplashScreen.tsx` - landing/splash experience shown before a graph exists; composes `SpotlightBar`
+  - `src/components/SpotlightBar.tsx` - reusable search form used both on the splash screen and as the in-graph spotlight overlay
   - `src/components/graph/` - graph overlays, controls, and graph-adjacent UI, including small dedicated control-button components with colocated CSS Modules where needed
   - `src/hooks/` - React hooks for graph lifecycle, layout controls, hotkeys, overlays, and status handling
   - `src/store/useAppStore.ts` - Zustand store for shared app/UI state
@@ -54,7 +56,7 @@
   - Examples: controller setup/teardown, hotkeys, toast timers, media-query handling, and syncing layout settings into the graph controller.
 - Component local state
   - Use local state only for UI concerns that are private to one component.
-  - Current example: the instructions accordion/open height behavior inside `src/components/SpotlightBar.tsx`.
+  - Current examples: the splash instructions accordion/open height behavior inside `src/components/SplashScreen.tsx`, and search suggestion UI state inside `src/components/SpotlightBar.tsx`.
 - `src/App.tsx`
   - Should not become a second state store.
   - Prefer reading shared state from Zustand and delegating behavior to hooks/components rather than recreating cross-cutting state in `App.tsx`.
