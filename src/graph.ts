@@ -82,6 +82,13 @@ type GraphControllerOptions = {
   initialLayoutSettings?: ForceAtlas2Settings;
   onNodeCountChange?: (count: number) => void;
   onEdgeCountChange?: (count: number) => void;
+  onSelectionChange?: (
+    selection: {
+      nodeId: string;
+      title: string;
+      expanded: boolean;
+    } | null,
+  ) => void;
 };
 
 const NODE_ALPHA = 0.9;
@@ -94,6 +101,22 @@ const LABEL_BACKGROUND_HIGHLIGHTED_COLOR = "#ffffff";
 const EDGE_COLOR = "rgba(128, 140, 156, 0.4)";
 const EDGE_COLOR_HIGHLIGHTED = "rgba(255, 255, 255, 0.35)";
 const NODE_COLOR_DIMMED = "rgba(32, 46, 60, 0.9)";
+
+const highlightedNodeDisplay = (
+  data: Record<string, unknown>,
+  zIndex: number,
+  highlighted = false,
+  forceLabel = false,
+) => ({
+  ...data,
+  color: NODE_COLOR,
+  labelBackground: true,
+  labelBackgroundColor: LABEL_BACKGROUND_HIGHLIGHTED_COLOR,
+  labelColor: LABEL_COLOR_HIGHLIGHTED,
+  forceLabel,
+  highlighted,
+  zIndex,
+});
 
 const BASE_NODE_SIZE = 1;
 const MAX_NODE_SIZE_BONUS = 35;
@@ -184,8 +207,11 @@ export class GraphController {
   private resolveArticleUrl: (title: string) => string;
   private onNodeCountChange?: (count: number) => void;
   private onEdgeCountChange?: (count: number) => void;
+  private onSelectionChange?: GraphControllerOptions["onSelectionChange"];
   private hoveredNode: string | null = null;
   private hoveredNeighbors: Set<string> | null = null;
+  private selectedNode: string | null = null;
+  private selectedNeighbors: Set<string> | null = null;
   private pendingEdges = new Map<string, ExpandEdge>();
   private pendingEdgesByNode = new Map<string, Set<string>>();
 
@@ -212,6 +238,7 @@ export class GraphController {
       ((title) => `https://en.wikipedia.org/wiki/${encodeURIComponent(title)}`);
     this.onNodeCountChange = options.onNodeCountChange;
     this.onEdgeCountChange = options.onEdgeCountChange;
+    this.onSelectionChange = options.onSelectionChange;
     this.layout.start();
 
     this.setupNodeReducer();
@@ -221,33 +248,27 @@ export class GraphController {
 
   private setupNodeReducer() {
     this.sigma.setSetting("nodeReducer", (node, data) => {
-      if (!this.hoveredNode) {
+      const activeNode = this.selectedNode ?? this.hoveredNode;
+      const activeNeighbors = this.selectedNeighbors ?? this.hoveredNeighbors;
+
+      if (!activeNode) {
         return data;
       }
 
-      const isHovered = node === this.hoveredNode;
-      const isNeighbor = this.hoveredNeighbors?.has(node);
+      const isHovered = node === activeNode;
+      const isNeighbor = activeNeighbors?.has(node);
 
       if (isHovered) {
-        return {
-          ...data,
-          color: NODE_COLOR,
-          labelBackground: true,
-          labelBackgroundColor: LABEL_BACKGROUND_HIGHLIGHTED_COLOR,
-          labelColor: LABEL_COLOR_HIGHLIGHTED,
-          zIndex: 1,
-        };
+        return highlightedNodeDisplay(
+          data as Record<string, unknown>,
+          1,
+          true,
+          true,
+        );
       }
 
       if (isNeighbor) {
-        return {
-          ...data,
-          color: NODE_COLOR,
-          labelBackground: true,
-          labelBackgroundColor: LABEL_BACKGROUND_HIGHLIGHTED_COLOR,
-          labelColor: LABEL_COLOR_HIGHLIGHTED,
-          zIndex: 0.5,
-        };
+        return highlightedNodeDisplay(data as Record<string, unknown>, 0.5);
       }
 
       return {
@@ -261,14 +282,15 @@ export class GraphController {
 
   private setupEdgeReducer() {
     this.sigma.setSetting("edgeReducer", (edge, data) => {
-      if (!this.hoveredNode) {
+      const activeNode = this.selectedNode ?? this.hoveredNode;
+
+      if (!activeNode) {
         return data;
       }
 
       const source = this.graph.source(edge);
       const target = this.graph.target(edge);
-      const isConnected =
-        source === this.hoveredNode || target === this.hoveredNode;
+      const isConnected = source === activeNode || target === activeNode;
 
       if (isConnected) {
         return {
@@ -286,11 +308,16 @@ export class GraphController {
   }
 
   private setupEventHandlers() {
-    this.sigma.on("clickNode", async ({ node }) => {
-      const attrs = this.graph.getNodeAttributes(node);
-      if (attrs.expanded) return;
-      this.graph.setNodeAttribute(node, "expanded", true);
-      await this.expandNode(attrs.label, node);
+    this.sigma.on("clickNode", ({ node }) => {
+      this.setSelectedNode(node);
+    });
+
+    this.sigma.on("clickStage", () => {
+      this.clearSelectedNode();
+    });
+
+    this.sigma.on("doubleClickNode", ({ node }) => {
+      void this.expandNodeById(node);
     });
 
     this.sigma.on("rightClickNode", async ({ node }) => {
@@ -313,9 +340,65 @@ export class GraphController {
     });
   }
 
+  private notifySelectionChange() {
+    if (!this.selectedNode || !this.graph.hasNode(this.selectedNode)) {
+      this.onSelectionChange?.(null);
+      return;
+    }
+
+    const attrs = this.graph.getNodeAttributes(this.selectedNode);
+    this.onSelectionChange?.({
+      nodeId: this.selectedNode,
+      title: attrs.label,
+      expanded: Boolean(attrs.expanded),
+    });
+  }
+
+  private setSelectedNode(nodeId: string) {
+    if (!this.graph.hasNode(nodeId)) {
+      return;
+    }
+
+    this.selectedNode = nodeId;
+    this.selectedNeighbors = new Set(this.graph.neighbors(nodeId));
+    this.selectedNeighbors.add(nodeId);
+    this.notifySelectionChange();
+    this.sigma.refresh();
+  }
+
+  private clearSelectedNode() {
+    this.selectedNode = null;
+    this.selectedNeighbors = null;
+    this.notifySelectionChange();
+    this.sigma.refresh();
+  }
+
+  private async expandNodeById(nodeId: string) {
+    if (!this.graph.hasNode(nodeId)) {
+      return;
+    }
+
+    const attrs = this.graph.getNodeAttributes(nodeId);
+    if (attrs.expanded) {
+      return;
+    }
+
+    this.graph.setNodeAttribute(nodeId, "expanded", true);
+    this.notifySelectionChange();
+    await this.expandNode(attrs.label, nodeId);
+  }
+
   destroy() {
     this.layout.kill();
     this.sigma.kill();
+  }
+
+  async expandSelectedNode() {
+    if (!this.selectedNode) {
+      return;
+    }
+
+    await this.expandNodeById(this.selectedNode);
   }
 
   fitToGraph() {
@@ -323,10 +406,16 @@ export class GraphController {
   }
 
   reset() {
+    this.hoveredNode = null;
+    this.hoveredNeighbors = null;
+    this.selectedNode = null;
+    this.selectedNeighbors = null;
     this.graph.clear();
     this.pendingEdges.clear();
     this.pendingEdgesByNode.clear();
+    this.notifySelectionChange();
     this.notifyCounts();
+    this.sigma.refresh();
   }
 
   updateLayoutSettings(settings: ForceAtlas2Settings) {
@@ -346,6 +435,9 @@ export class GraphController {
   }
 
   async seed(title: string) {
+    this.selectedNode = null;
+    this.selectedNeighbors = null;
+    this.notifySelectionChange();
     const payload = await this.onExpand(title);
     this.applyExpansion(payload, true);
   }
@@ -543,6 +635,7 @@ export class GraphController {
     this.tryAttachPendingForNodes(newNodes);
 
     this.updateNodeSize(centerId);
+    this.notifySelectionChange();
     this.notifyCounts();
   }
 }

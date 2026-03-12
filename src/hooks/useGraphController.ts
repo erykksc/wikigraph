@@ -35,6 +35,7 @@ export function useGraphController({
   const setIsLoading = useAppStore((state) => state.setIsLoading);
   const setNodeCount = useAppStore((state) => state.setNodeCount);
   const setEdgeCount = useAppStore((state) => state.setEdgeCount);
+  const setSelectedNode = useAppStore((state) => state.setSelectedNode);
 
   useEffect(() => {
     querySourceRef.current = querySource;
@@ -90,13 +91,14 @@ export function useGraphController({
       },
       onNodeCountChange: setNodeCount,
       onEdgeCountChange: setEdgeCount,
+      onSelectionChange: setSelectedNode,
     });
 
     return () => {
       graphRef.current?.destroy();
       graphRef.current = null;
     };
-  }, [setEdgeCount, setIsLoading, setNodeCount]);
+  }, [setEdgeCount, setIsLoading, setNodeCount, setSelectedNode]);
 
   const seedGraph = useCallback(async (title: string) => {
     if (!graphRef.current) {
@@ -117,6 +119,14 @@ export function useGraphController({
     graphRef.current?.fitToGraph();
   }, []);
 
+  const expandSelectedNode = useCallback(async () => {
+    if (!graphRef.current) {
+      return;
+    }
+
+    await graphRef.current.expandSelectedNode();
+  }, []);
+
   return {
     containerRef,
     graphRef,
@@ -127,5 +137,6 @@ export function useGraphController({
     seedGraph,
     resetGraph,
     fitGraph,
+    expandSelectedNode,
   };
 }

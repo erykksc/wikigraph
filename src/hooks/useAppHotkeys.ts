@@ -5,6 +5,7 @@ type UseAppHotkeysParams = {
   hasGraph: boolean;
   onFitGraph: () => void;
   onResetGraph: () => void;
+  onExpandSelectedNode: () => void;
   onToggleAudioMuted: () => void;
   onTogglePause: () => void;
 };
@@ -13,11 +14,14 @@ export function useAppHotkeys({
   hasGraph,
   onFitGraph,
   onResetGraph,
+  onExpandSelectedNode,
   onToggleAudioMuted,
   onTogglePause,
 }: UseAppHotkeysParams) {
   const spotlightOpen = useAppStore((state) => state.spotlightOpen);
   const controlsOpen = useAppStore((state) => state.controlsOpen);
+  const selectedNode = useAppStore((state) => state.selectedNode);
+  const isLoading = useAppStore((state) => state.isLoading);
   const openSpotlight = useAppStore((state) => state.openSpotlight);
   const openControls = useAppStore((state) => state.openControls);
   const closeControls = useAppStore((state) => state.closeControls);
@@ -89,6 +93,19 @@ export function useAppHotkeys({
       }
 
       if (
+        event.key.toLowerCase() === "e" &&
+        !event.altKey &&
+        !event.metaKey &&
+        !event.ctrlKey
+      ) {
+        event.preventDefault();
+        if (hasGraph && selectedNode && !selectedNode.expanded && !isLoading) {
+          onExpandSelectedNode();
+        }
+        return;
+      }
+
+      if (
         event.key === "," &&
         !event.altKey &&
         !event.metaKey &&
@@ -117,12 +134,15 @@ export function useAppHotkeys({
     closeControls,
     controlsOpen,
     hasGraph,
+    isLoading,
+    onExpandSelectedNode,
     onFitGraph,
     onResetGraph,
     onToggleAudioMuted,
     onTogglePause,
     openControls,
     openSpotlight,
+    selectedNode,
     spotlightOpen,
   ]);
 }

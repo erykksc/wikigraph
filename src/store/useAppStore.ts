@@ -10,6 +10,12 @@ type ToastState = {
   fading: boolean;
 };
 
+type SelectedNodeState = {
+  nodeId: string;
+  title: string;
+  expanded: boolean;
+};
+
 type AppStore = {
   seed: string;
   querySource: WikipediaLanguage;
@@ -21,6 +27,7 @@ type AppStore = {
   isLoading: boolean;
   nodeCount: number;
   edgeCount: number;
+  selectedNode: SelectedNodeState | null;
   toast: ToastState;
   setSeed: (seed: string) => void;
   setQuerySource: (querySource: WikipediaLanguage) => void;
@@ -39,6 +46,7 @@ type AppStore = {
   setIsLoading: (isLoading: boolean) => void;
   setNodeCount: (nodeCount: number) => void;
   setEdgeCount: (edgeCount: number) => void;
+  setSelectedNode: (selectedNode: SelectedNodeState | null) => void;
   showToast: (message: string, error?: string | null) => void;
   setToastFading: (fading: boolean) => void;
   clearToast: () => void;
@@ -62,6 +70,7 @@ export const useAppStore = create<AppStore>((set) => ({
   isLoading: false,
   nodeCount: 0,
   edgeCount: 0,
+  selectedNode: null,
   toast: initialToastState,
   setSeed: (seed) => set({ seed }),
   setQuerySource: (querySource) => set({ querySource }),
@@ -91,6 +100,7 @@ export const useAppStore = create<AppStore>((set) => ({
   setIsLoading: (isLoading) => set({ isLoading }),
   setNodeCount: (nodeCount) => set({ nodeCount }),
   setEdgeCount: (edgeCount) => set({ edgeCount }),
+  setSelectedNode: (selectedNode) => set({ selectedNode }),
   showToast: (message, error = null) =>
     set({
       toast: {

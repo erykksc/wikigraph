@@ -4,6 +4,7 @@ import SpotlightBar from "./components/SpotlightBar";
 import GraphActions from "./components/graph/GraphActions";
 import GraphCanvas from "./components/graph/GraphCanvas";
 import CreditBadge from "./components/graph/CreditBadge";
+import ExpandButton from "./components/graph/ExpandButton";
 import GraphInfo from "./components/graph/GraphInfo";
 import LayoutControlsPanel from "./components/graph/LayoutControlsPanel";
 import StatusToast from "./components/graph/StatusToast";
@@ -24,6 +25,7 @@ function App() {
   const querySource = useAppStore((state) => state.querySource);
   const spotlightOpen = useAppStore((state) => state.spotlightOpen);
   const isAudioMuted = useAppStore((state) => state.isAudioMuted);
+  const selectedNode = useAppStore((state) => state.selectedNode);
   const setSeed = useAppStore((state) => state.setSeed);
   const openSpotlight = useAppStore((state) => state.openSpotlight);
   const closeSpotlight = useAppStore((state) => state.closeSpotlight);
@@ -84,6 +86,7 @@ function App() {
     seedGraph,
     resetGraph,
     fitGraph,
+    expandSelectedNode,
   } = useGraphController({
     querySource,
     initialLayoutSettings: defaultLayoutSettings,
@@ -157,11 +160,17 @@ function App() {
 
   useAppHotkeys({
     hasGraph,
+    onExpandSelectedNode: () => {
+      void expandSelectedNode();
+    },
     onFitGraph: fitGraph,
     onResetGraph: handleResetGraph,
     onToggleAudioMuted: toggleAudioMuted,
     onTogglePause: togglePause,
   });
+
+  const shouldShowExpandButton =
+    !!selectedNode && !selectedNode.expanded && !isLoading;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -209,6 +218,14 @@ function App() {
               onFitGraph={fitGraph}
               onResetGraph={handleResetGraph}
             />
+            {shouldShowExpandButton ? (
+              <ExpandButton
+                selectedTitle={selectedNode.title}
+                onExpand={() => {
+                  void expandSelectedNode();
+                }}
+              />
+            ) : null}
             <GraphInfo />
             <div className={styles.bottomInfoStack}>
               <StatusToast />
