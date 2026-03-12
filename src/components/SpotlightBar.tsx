@@ -402,7 +402,7 @@ const SpotlightBar = ({
           <h2>Getting Started</h2>
           <p>
             Enter a Wikipedia article title and click Grow Graph or press
-            'enter'.
+            <kbd>enter</kbd>.
           </p>
         </section>
 
@@ -416,7 +416,11 @@ const SpotlightBar = ({
             >
               {"\u2b24"}
             </span>{" "}
-            to expand it and reveal related articles.
+            to select it. Then use the Wikipedia or Expand button.
+          </p>
+          <p>
+            Double click any unexpanded node to expand it immediately and reveal
+            related articles.
           </p>
           <p>
             Right click any node to open its Wikipedia article in a new tab.
@@ -474,6 +478,10 @@ const SpotlightBar = ({
             search.
           </p>
           <p>
+            <kbd>w</kbd> opens the selected node on Wikipedia, and <kbd>e</kbd>
+            expands the selected unexpanded node.
+          </p>
+          <p>
             <kbd>,</kbd> opens graph layout settings.
           </p>
           <p>
@@ -482,6 +490,9 @@ const SpotlightBar = ({
           <p>
             <kbd>f</kbd> fits the graph, and <kbd>space</kbd> pauses or resumes
             the layout.
+          </p>
+          <p>
+            <kbd>r</kbd> resets the graph.
           </p>
         </section>
       </div>

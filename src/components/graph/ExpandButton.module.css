@@ -4,21 +4,113 @@
   width: 100%;
 }
 
-.button {
+.articleButton,
+.buttonGroup {
+  display: inline-flex;
   width: auto;
-  min-width: 122px;
+  min-width: 220px;
   height: 52px;
-  padding: 0 1.2rem;
-  border-color: rgba(255, 228, 147, 0.35);
+  box-sizing: border-box;
+  overflow: hidden;
+  border: 1px solid rgba(255, 228, 147, 0.35);
+  border-radius: 999px;
   box-shadow: 0 18px 36px -24px rgba(242, 201, 76, 0.7);
-  font-size: 0.78rem;
+}
+
+.articleButton,
+.wikipediaButton,
+.expandButton {
+  appearance: none;
+  border: 0;
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0 1.2rem;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    filter 0.18s ease;
+}
+
+.articleButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #111111;
+  background: linear-gradient(180deg, #ffffff, #f1f1f1);
+}
+
+.wikipediaButton {
+  color: #111111;
+  background: linear-gradient(180deg, #ffffff, #f1f1f1);
+}
+
+.expandButton {
+  color: #241a00;
+  background: linear-gradient(140deg, var(--accent), #f2a93b);
+  border-left: 1px solid rgba(36, 26, 0, 0.22);
+}
+
+.articleButton:hover,
+.wikipediaButton:hover,
+.expandButton:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.02);
+}
+
+.articleButton:focus-visible,
+.wikipediaButton:focus-visible,
+.expandButton:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline-offset: -2px;
+}
+
+.articleButton:active,
+.wikipediaButton:active,
+.expandButton:active {
+  transform: translateY(0);
+}
+
+.articleButton:disabled,
+.wikipediaButton:disabled,
+.expandButton:disabled {
+  cursor: not-allowed;
+  filter: saturate(0.7);
+}
+
+.articleButton {
+  min-width: 220px;
+}
+
+.wikipediaButton,
+.expandButton {
+  min-width: 0;
+  flex: 1 1 50%;
 }
 
 @media (max-width: 800px) {
-  .button {
-    min-width: 108px;
+  .articleButton,
+  .buttonGroup {
+    min-width: 196px;
     height: 46px;
+  }
+
+  .articleButton,
+  .wikipediaButton,
+  .expandButton {
     padding: 0 1rem;
-    font-size: 0.72rem;
+    font-size: 0.94rem;
+  }
+}
+
+@media (hover: hover) {
+  .articleButton:hover,
+  .buttonGroup:hover {
+    box-shadow: 0 20px 38px -24px rgba(242, 201, 76, 0.76);
   }
 }

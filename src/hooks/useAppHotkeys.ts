@@ -6,6 +6,7 @@ type UseAppHotkeysParams = {
   onFitGraph: () => void;
   onResetGraph: () => void;
   onExpandSelectedNode: () => void;
+  onOpenSelectedArticle: () => void;
   onToggleAudioMuted: () => void;
   onTogglePause: () => void;
 };
@@ -15,6 +16,7 @@ export function useAppHotkeys({
   onFitGraph,
   onResetGraph,
   onExpandSelectedNode,
+  onOpenSelectedArticle,
   onToggleAudioMuted,
   onTogglePause,
 }: UseAppHotkeysParams) {
@@ -106,6 +108,19 @@ export function useAppHotkeys({
       }
 
       if (
+        event.key.toLowerCase() === "w" &&
+        !event.altKey &&
+        !event.metaKey &&
+        !event.ctrlKey
+      ) {
+        event.preventDefault();
+        if (hasGraph && selectedNode && !isLoading) {
+          onOpenSelectedArticle();
+        }
+        return;
+      }
+
+      if (
         event.key === "," &&
         !event.altKey &&
         !event.metaKey &&
@@ -137,6 +152,7 @@ export function useAppHotkeys({
     isLoading,
     onExpandSelectedNode,
     onFitGraph,
+    onOpenSelectedArticle,
     onResetGraph,
     onToggleAudioMuted,
     onTogglePause,

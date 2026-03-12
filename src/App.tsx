@@ -78,6 +78,15 @@ function App() {
     });
   }, [unlockAudio]);
 
+  const openSelectedArticle = useCallback(() => {
+    if (!selectedNode) {
+      return;
+    }
+
+    const url = `https://${querySource}.wikipedia.org/wiki/${encodeURIComponent(selectedNode.title)}`;
+    window.open(url, "_blank", "noopener,noreferrer");
+  }, [querySource, selectedNode]);
+
   const {
     containerRef,
     graphRef,
@@ -164,13 +173,13 @@ function App() {
       void expandSelectedNode();
     },
     onFitGraph: fitGraph,
+    onOpenSelectedArticle: openSelectedArticle,
     onResetGraph: handleResetGraph,
     onToggleAudioMuted: toggleAudioMuted,
     onTogglePause: togglePause,
   });
 
-  const shouldShowExpandButton =
-    !!selectedNode && !selectedNode.expanded && !isLoading;
+  const shouldShowExpandButton = !!selectedNode && !isLoading;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -223,6 +232,8 @@ function App() {
               {shouldShowExpandButton ? (
                 <ExpandButton
                   selectedTitle={selectedNode.title}
+                  isExpanded={selectedNode.expanded}
+                  onOpenArticle={openSelectedArticle}
                   onExpand={() => {
                     void expandSelectedNode();
                   }}
