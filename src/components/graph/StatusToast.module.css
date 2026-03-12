@@ -1,7 +1,5 @@
 .root {
-  position: fixed;
-  left: 50%;
-  bottom: max(1.5rem, env(safe-area-inset-bottom));
+  position: relative;
   padding: 0.7rem 1rem;
   background: var(--panel);
   border-radius: 12px;
@@ -12,9 +10,8 @@
   max-width: min(calc(100vw - 3rem), 36rem);
   box-shadow: 0 12px 24px -20px var(--shadow);
   opacity: 0;
-  transform: translate(-50%, 0.35rem);
+  transform: translateY(0.35rem);
   pointer-events: none;
-  z-index: 20;
   transition:
     opacity 0.22s ease,
     transform 0.22s ease;
@@ -22,12 +19,12 @@
 
 .isVisible {
   opacity: 1;
-  transform: translate(-50%, 0);
+  transform: translateY(0);
 }
 
 .isFading {
   opacity: 0;
-  transform: translate(-50%, 0.2rem);
+  transform: translateY(0.2rem);
   transition-duration: 1.5s;
 }
 
@@ -43,7 +40,6 @@
 
 @media (max-width: 800px) {
   .root {
-    bottom: max(0.75rem, env(safe-area-inset-bottom));
     max-width: calc(100vw - 1.5rem);
   }
 }

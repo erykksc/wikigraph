@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { useAppStore } from "../store/useAppStore";
 
-const DEFAULT_FADE_DURATION_MS = 3000;
+const DEFAULT_FADE_DURATION_MS = 4500;
 
 export function useStatusToast(fadeDurationMs = DEFAULT_FADE_DURATION_MS) {
   const timeoutRef = useRef<number | null>(null);

@@ -218,17 +218,19 @@ function App() {
               onFitGraph={fitGraph}
               onResetGraph={handleResetGraph}
             />
-            {shouldShowExpandButton ? (
-              <ExpandButton
-                selectedTitle={selectedNode.title}
-                onExpand={() => {
-                  void expandSelectedNode();
-                }}
-              />
-            ) : null}
+            <div className={styles.bottomCenterStack}>
+              <StatusToast />
+              {shouldShowExpandButton ? (
+                <ExpandButton
+                  selectedTitle={selectedNode.title}
+                  onExpand={() => {
+                    void expandSelectedNode();
+                  }}
+                />
+              ) : null}
+            </div>
             <GraphInfo />
             <div className={styles.bottomInfoStack}>
-              <StatusToast />
               <CreditBadge />
             </div>
           </>

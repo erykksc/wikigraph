@@ -1,9 +1,7 @@
 .root {
-  position: absolute;
-  left: 50%;
-  bottom: max(4.75rem, calc(env(safe-area-inset-bottom) + 4rem));
-  transform: translateX(-50%);
-  z-index: 5;
+  display: flex;
+  justify-content: center;
+  width: 100%;
 }
 
 .button {
@@ -17,10 +15,6 @@
 }
 
 @media (max-width: 800px) {
-  .root {
-    bottom: max(4rem, calc(env(safe-area-inset-bottom) + 3.3rem));
-  }
-
   .button {
     min-width: 108px;
     height: 46px;
