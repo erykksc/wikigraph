@@ -104,12 +104,10 @@ function App() {
     backgroundAudio.loop = true;
     backgroundAudio.preload = "auto";
     backgroundAudio.volume = BACKGROUND_MUSIC_VOLUME;
-    backgroundAudio.muted = isAudioMuted;
     backgroundAudioRef.current = backgroundAudio;
 
     const clickAudio = new Audio(`${assetBaseUrl}sound_effect-click.wav`);
     clickAudio.preload = "auto";
-    clickAudio.muted = isAudioMuted;
     clickAudioRef.current = clickAudio;
 
     return () => {

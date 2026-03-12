@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useState } from "react";
 import styles from "./LayoutNumberControl.module.css";
 
 type LayoutNumberControlProps = {
@@ -40,15 +40,8 @@ const LayoutNumberControl = ({
 }: LayoutNumberControlProps) => {
   const inputId = useId();
   const labelId = useId();
-  const [draft, setDraft] = useState(() => formatValue(value, step));
-  const lastValueRef = useRef(value);
-
-  useEffect(() => {
-    if (lastValueRef.current !== value) {
-      setDraft(formatValue(value, step));
-      lastValueRef.current = value;
-    }
-  }, [step, value]);
+  const [draft, setDraft] = useState<string | null>(null);
+  const displayValue = draft ?? formatValue(value, step);
 
   const commitDraft = (rawValue: string) => {
     if (
@@ -57,21 +50,18 @@ const LayoutNumberControl = ({
       rawValue === "." ||
       rawValue === "-."
     ) {
-      setDraft(formatValue(value, step));
+      setDraft(null);
       return;
     }
 
     const parsedValue = Number(rawValue);
     if (!Number.isFinite(parsedValue)) {
-      setDraft(formatValue(value, step));
+      setDraft(null);
       return;
     }
 
-    const nextValue = parsedValue;
-    const formattedValue = formatValue(nextValue, step);
-
-    setDraft(formattedValue);
-    lastValueRef.current = nextValue;
+    const nextValue = parsedValue < min ? min : parsedValue;
+    setDraft(null);
 
     if (nextValue !== value) {
       onChange(nextValue);
@@ -96,8 +86,11 @@ const LayoutNumberControl = ({
       return;
     }
 
+    if (parsedValue < min) {
+      return;
+    }
+
     const nextValue = parsedValue;
-    lastValueRef.current = nextValue;
 
     if (nextValue !== value) {
       onChange(nextValue);
@@ -115,9 +108,8 @@ const LayoutNumberControl = ({
           className={styles.valueInput}
           type="number"
           min={min}
-          max={max}
           step={step}
-          value={draft}
+          value={displayValue}
           disabled={disabled}
           aria-label={`${label} value`}
           onChange={(event) => handleNumberChange(event.target.value)}
@@ -129,7 +121,7 @@ const LayoutNumberControl = ({
             }
 
             if (event.key === "Escape") {
-              setDraft(formatValue(value, step));
+              setDraft(null);
               event.currentTarget.blur();
             }
           }}
@@ -146,8 +138,7 @@ const LayoutNumberControl = ({
         aria-labelledby={labelId}
         onChange={(event) => {
           const nextValue = Number(event.target.value);
-          lastValueRef.current = nextValue;
-          setDraft(formatValue(nextValue, step));
+          setDraft(null);
           onChange(nextValue);
         }}
       />
