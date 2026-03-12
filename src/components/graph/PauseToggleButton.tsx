@@ -26,7 +26,7 @@ const PauseToggleButton = ({
       aria-pressed={isPaused}
     >
       <img
-        className={cn(styles.icon, styles.isCompact)}
+        className={cn(styles.icon, styles.isWhite, styles.isCompact)}
         src={`${assetBaseUrl}${isPaused ? "play.svg" : "pause.svg"}`}
         alt=""
         aria-hidden="true"
