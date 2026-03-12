@@ -200,23 +200,20 @@ const SpotlightBar = ({
       const content = instructionsContentRef.current;
       if (!content) return;
 
-      if (!window.matchMedia("(max-width: 800px)").matches) {
-        setInstructionsMaxHeight(null);
-        setInstructionsNeedScroll(false);
-        return;
-      }
-
       content.style.maxHeight = "none";
 
       const rect = content.getBoundingClientRect();
-      const availableHeight = Math.floor(window.innerHeight - rect.top - 12);
+      const viewportHeight =
+        window.visualViewport?.height ?? window.innerHeight;
+      const availableHeight = Math.max(
+        0,
+        Math.floor(viewportHeight - rect.top - 12),
+      );
       const naturalHeight = content.scrollHeight;
       const needsScroll = naturalHeight > availableHeight;
 
       setInstructionsNeedScroll(needsScroll);
-      setInstructionsMaxHeight(
-        needsScroll ? Math.max(140, availableHeight) : null,
-      );
+      setInstructionsMaxHeight(needsScroll ? availableHeight : null);
     };
 
     const rafId = window.requestAnimationFrame(updateInstructionsHeight);
@@ -409,9 +406,16 @@ const SpotlightBar = ({
         <section className={styles.instructionsSection}>
           <h2>Exploring the Graph</h2>
           <p>
-            Left click any node{" "}
+            Left click
+            <img
+              className={styles.instructionIcon}
+              src={`${assetBaseUrl}mouse-click-left.svg`}
+              alt=""
+              aria-hidden="true"
+            />
+            any node{" "}
             <span
-              className={cn(styles.nodeDot, styles.nodeDotUnexpanded)}
+              className={cn(styles.nodeDot, styles.nodeDotCool)}
               aria-hidden="true"
             >
               {"\u2b24"}
@@ -419,11 +423,31 @@ const SpotlightBar = ({
             to select it. Then use the Wikipedia or Expand button.
           </p>
           <p>
-            Double click any unexpanded node to expand it immediately and reveal
-            related articles.
+            Double click
+            <img
+              className={styles.instructionIcon}
+              src={`${assetBaseUrl}mouse-click-left.svg`}
+              alt=""
+              aria-hidden="true"
+            />
+            <img
+              className={styles.instructionIcon}
+              src={`${assetBaseUrl}mouse-click-left.svg`}
+              alt=""
+              aria-hidden="true"
+            />
+            any unexpanded node to expand it immediately and reveal related
+            articles.
           </p>
           <p>
-            Right click any node to open its Wikipedia article in a new tab.
+            Right click
+            <img
+              className={styles.instructionIcon}
+              src={`${assetBaseUrl}mouse-click-right.svg`}
+              alt=""
+              aria-hidden="true"
+            />
+            any node to open its Wikipedia article in a new tab.
           </p>
         </section>
 

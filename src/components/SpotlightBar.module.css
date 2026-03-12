@@ -79,6 +79,17 @@
   object-fit: contain;
 }
 
+.instructionIcon {
+  display: inline-block;
+  width: 1.15rem;
+  height: 1.15rem;
+  margin: 0 0.32rem;
+  vertical-align: -0.2rem;
+  object-fit: contain;
+  filter: invert(89%) sepia(7%) saturate(416%) hue-rotate(177deg)
+    brightness(102%) contrast(91%);
+}
+
 .card {
   width: min(900px, 100%);
   background: rgba(12, 22, 34, 0.7);
@@ -288,6 +299,8 @@
   border-radius: 20px;
   box-shadow: 0 20px 50px -38px rgba(0, 0, 0, 0.88);
   backdrop-filter: blur(14px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .instructionsSection {
@@ -403,8 +416,6 @@
     flex: 1 1 auto;
     min-height: 0;
     max-height: 100%;
-    overflow-y: auto;
-    overscroll-behavior: contain;
   }
 
   .form {
