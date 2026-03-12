@@ -477,7 +477,7 @@ export class GraphController {
     const isExpanded = this.graph.getNodeAttribute(nodeId, "expanded");
 
     this.graph.setNodeAttribute(nodeId, "size", size);
-    this.graph.setNodeAttribute(nodeId, "zIndex", isExpanded ? -1 : degree);
+    this.graph.setNodeAttribute(nodeId, "zIndex", degree);
     this.graph.setNodeAttribute(
       nodeId,
       "color",
@@ -521,7 +521,6 @@ export class GraphController {
 
     this.graph.setNodeAttribute(centerId, "expanded", true);
     this.graph.setNodeAttribute(centerId, "color", EXPANDED_NODE_COLOR);
-    this.graph.setNodeAttribute(centerId, "zIndex", -1);
 
     payload.newEdges.forEach((edge) => {
       const edgeKey = this.edgeKey(edge.fromNode, edge.targetNode);
