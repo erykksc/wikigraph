@@ -431,7 +431,7 @@ const SpotlightBar = ({
             <section className={styles.instructionsSection}>
               <h2>Exploring the Graph</h2>
               <p>
-                Left click a blue node{" "}
+                Left click any node{" "}
                 <span
                   className={cn(styles.nodeDot, styles.nodeDotUnexpanded)}
                   aria-hidden="true"
@@ -449,12 +449,33 @@ const SpotlightBar = ({
               <h2>Node Colors</h2>
               <p>
                 <span
-                  className={cn(styles.nodeDot, styles.nodeDotUnexpanded)}
+                  className={cn(styles.nodeDot, styles.nodeDotCool)}
                   aria-hidden="true"
                 >
                   {"\u2b24"}
                 </span>{" "}
-                Blue nodes are unexpanded.
+                <strong>Few neighbors</strong>: nodes start light blue when they
+                only have a small number of connections.
+              </p>
+              <p>
+                <span
+                  className={cn(styles.nodeDot, styles.nodeDotMid)}
+                  aria-hidden="true"
+                >
+                  {"\u2b24"}
+                </span>{" "}
+                <strong>More neighbors</strong>: the color shifts through green
+                as the node becomes more connected.
+              </p>
+              <p>
+                <span
+                  className={cn(styles.nodeDot, styles.nodeDotWarm)}
+                  aria-hidden="true"
+                >
+                  {"\u2b24"}
+                </span>{" "}
+                <strong>Many neighbors</strong>: highly connected nodes become
+                yellow or amber.
               </p>
               <p>
                 <span
@@ -463,7 +484,8 @@ const SpotlightBar = ({
                 >
                   {"\u2b24"}
                 </span>{" "}
-                Green nodes are already expanded.
+                <strong>Expanded nodes</strong>: dark purple means the node has
+                already been expanded.
               </p>
             </section>
 

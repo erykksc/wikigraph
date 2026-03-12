@@ -305,12 +305,20 @@
   line-height: 1;
 }
 
-.nodeDotUnexpanded {
+.nodeDotCool {
   color: #56ccf2;
 }
 
+.nodeDotMid {
+  color: #65d87f;
+}
+
+.nodeDotWarm {
+  color: #f0c24b;
+}
+
 .nodeDotExpanded {
-  color: #56f28a;
+  color: #6a2ea0;
 }
 
 @media (max-width: 800px) {

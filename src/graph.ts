@@ -67,6 +67,7 @@ type GraphNodeAttributes = {
   y: number;
   size: number;
   color: string;
+  zIndex: number;
   expanded?: boolean;
 };
 
@@ -83,8 +84,9 @@ type GraphControllerOptions = {
   onEdgeCountChange?: (count: number) => void;
 };
 
-const NODE_COLOR = "#56ccf2";
-const EXPANDED_NODE_COLOR = "#56f28a";
+const NODE_ALPHA = 0.9;
+const NODE_COLOR = `rgba(86, 204, 242, ${NODE_ALPHA})`;
+const EXPANDED_NODE_COLOR = `rgba(106, 46, 160, ${NODE_ALPHA})`;
 
 const LABEL_COLOR_DEFAULT = "#e6edf5";
 const LABEL_COLOR_HIGHLIGHTED = "#000000";
@@ -93,8 +95,82 @@ const EDGE_COLOR = "rgba(128, 140, 156, 0.4)";
 const EDGE_COLOR_HIGHLIGHTED = "rgba(255, 255, 255, 0.35)";
 const NODE_COLOR_DIMMED = "rgba(32, 46, 60, 0.9)";
 
-const BASE_NODE_SIZE = 4;
-const SIZE_SCALE = 1.4;
+const BASE_NODE_SIZE = 1;
+const MAX_NODE_SIZE_BONUS = 35;
+const NODE_SIZE_GROWTH_RATE = 8;
+const NODE_COLOR_GROWTH_RATE = 6;
+const UNEXPANDED_NODE_COOL_HUE = 198;
+const UNEXPANDED_NODE_WARM_HUE = 32;
+
+const degreeIntensity = (degree: number, growthRate: number): number =>
+  1 - Math.exp(-degree / growthRate);
+
+const hslToHex = (
+  hue: number,
+  saturation: number,
+  lightness: number,
+): string => {
+  const s = saturation / 100;
+  const l = lightness / 100;
+  const chroma = (1 - Math.abs(2 * l - 1)) * s;
+  const hueSection = hue / 60;
+  const x = chroma * (1 - Math.abs((hueSection % 2) - 1));
+
+  let red = 0;
+  let green = 0;
+  let blue = 0;
+
+  if (hueSection >= 0 && hueSection < 1) {
+    red = chroma;
+    green = x;
+  } else if (hueSection < 2) {
+    red = x;
+    green = chroma;
+  } else if (hueSection < 3) {
+    green = chroma;
+    blue = x;
+  } else if (hueSection < 4) {
+    green = x;
+    blue = chroma;
+  } else if (hueSection < 5) {
+    red = x;
+    blue = chroma;
+  } else {
+    red = chroma;
+    blue = x;
+  }
+
+  const match = l - chroma / 2;
+  const toHex = (value: number): string =>
+    Math.round((value + match) * 255)
+      .toString(16)
+      .padStart(2, "0");
+
+  return `#${toHex(red)}${toHex(green)}${toHex(blue)}`;
+};
+
+const hexToRgba = (hex: string, alpha: number): string => {
+  const normalized = hex.replace("#", "");
+  const red = parseInt(normalized.slice(0, 2), 16);
+  const green = parseInt(normalized.slice(2, 4), 16);
+  const blue = parseInt(normalized.slice(4, 6), 16);
+
+  return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+};
+
+const colorForUnexpandedDegree = (degree: number): string => {
+  const intensity = degreeIntensity(
+    Math.max(0, degree - 1),
+    NODE_COLOR_GROWTH_RATE,
+  );
+  const hue =
+    UNEXPANDED_NODE_COOL_HUE -
+    (UNEXPANDED_NODE_COOL_HUE - UNEXPANDED_NODE_WARM_HUE) * intensity;
+  const saturation = 76 + 14 * intensity;
+  const lightness = 63 - 8 * intensity;
+
+  return hexToRgba(hslToHex(hue, saturation, lightness), NODE_ALPHA);
+};
 
 const randomBetween = (min: number, max: number): number =>
   Math.random() * (max - min) + min;
@@ -300,6 +376,7 @@ export class GraphController {
       y: baseY + randomBetween(-5, 5),
       size,
       color,
+      zIndex: 0,
     });
   }
 
@@ -395,8 +472,17 @@ export class GraphController {
 
   private updateNodeSize(nodeId: string) {
     const degree = this.graph.degree(nodeId);
-    const size = BASE_NODE_SIZE + Math.sqrt(degree) * SIZE_SCALE;
+    const sizeIntensity = degreeIntensity(degree, NODE_SIZE_GROWTH_RATE);
+    const size = BASE_NODE_SIZE + MAX_NODE_SIZE_BONUS * sizeIntensity;
+    const isExpanded = this.graph.getNodeAttribute(nodeId, "expanded");
+
     this.graph.setNodeAttribute(nodeId, "size", size);
+    this.graph.setNodeAttribute(nodeId, "zIndex", isExpanded ? -1 : degree);
+    this.graph.setNodeAttribute(
+      nodeId,
+      "color",
+      isExpanded ? EXPANDED_NODE_COLOR : colorForUnexpandedDegree(degree),
+    );
   }
 
   private applyExpansion(
@@ -435,6 +521,7 @@ export class GraphController {
 
     this.graph.setNodeAttribute(centerId, "expanded", true);
     this.graph.setNodeAttribute(centerId, "color", EXPANDED_NODE_COLOR);
+    this.graph.setNodeAttribute(centerId, "zIndex", -1);
 
     payload.newEdges.forEach((edge) => {
       const edgeKey = this.edgeKey(edge.fromNode, edge.targetNode);
