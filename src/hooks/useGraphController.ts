@@ -10,7 +10,7 @@ type UseGraphControllerParams = {
   onShowStatus: (message: string, nextError?: string | null) => void;
   onFadeStatus: () => void;
   onClearStatus: () => void;
-  onExpansionTriggered?: () => void;
+  onExpansionSucceeded?: () => void;
 };
 
 export function useGraphController({
@@ -19,7 +19,7 @@ export function useGraphController({
   onShowStatus,
   onFadeStatus,
   onClearStatus,
-  onExpansionTriggered,
+  onExpansionSucceeded,
 }: UseGraphControllerParams) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const graphRef = useRef<GraphController | null>(null);
@@ -28,7 +28,7 @@ export function useGraphController({
   const showStatusRef = useRef(onShowStatus);
   const fadeStatusRef = useRef(onFadeStatus);
   const clearStatusRef = useRef(onClearStatus);
-  const expansionTriggeredRef = useRef(onExpansionTriggered);
+  const expansionSucceededRef = useRef(onExpansionSucceeded);
   const isLoading = useAppStore((state) => state.isLoading);
   const nodeCount = useAppStore((state) => state.nodeCount);
   const edgeCount = useAppStore((state) => state.edgeCount);
@@ -54,8 +54,8 @@ export function useGraphController({
   }, [onClearStatus]);
 
   useEffect(() => {
-    expansionTriggeredRef.current = onExpansionTriggered;
-  }, [onExpansionTriggered]);
+    expansionSucceededRef.current = onExpansionSucceeded;
+  }, [onExpansionSucceeded]);
 
   useEffect(() => {
     if (!containerRef.current) {
@@ -66,12 +66,12 @@ export function useGraphController({
       container: containerRef.current,
       initialLayoutSettings: initialLayoutSettingsRef.current,
       onExpand: async (title) => {
-        expansionTriggeredRef.current?.();
         setIsLoading(true);
         showStatusRef.current(`Expanding ${title}`);
 
         try {
           const payload = await expandTitle(title, querySourceRef.current);
+          expansionSucceededRef.current?.();
           showStatusRef.current(`Expanded ${title}`);
           fadeStatusRef.current();
           return payload;

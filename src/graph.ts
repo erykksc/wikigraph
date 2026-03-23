@@ -385,7 +385,14 @@ export class GraphController {
 
     this.graph.setNodeAttribute(nodeId, "expanded", true);
     this.notifySelectionChange();
-    await this.expandNode(attrs.label, nodeId);
+
+    try {
+      await this.expandNode(attrs.label, nodeId);
+    } catch (error) {
+      this.graph.setNodeAttribute(nodeId, "expanded", false);
+      this.notifySelectionChange();
+      throw error;
+    }
   }
 
   destroy() {

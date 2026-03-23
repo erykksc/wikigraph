@@ -103,7 +103,7 @@ function App() {
     onShowStatus: showStatus,
     onFadeStatus: fadeStatus,
     onClearStatus: clearStatus,
-    onExpansionTriggered: playExpansionSound,
+    onExpansionSucceeded: playExpansionSound,
   });
   const { resetLayoutSettings, togglePause } = useLayoutSettings({
     graphRef,
