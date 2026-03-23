@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ForceAtlas2Settings } from "graphology-layout-forceatlas2";
 import type { GraphController } from "../graph";
 import { useAppStore } from "../store/useAppStore";
@@ -20,6 +20,8 @@ export function useLayoutSettings({
   const defaultSlowdown = defaultSettings.slowDown ?? 0.1;
   const slowdownBeforePauseRef = useRef(defaultSlowdown);
   const slowdownBeforeFastForwardRef = useRef(defaultSlowdown);
+  const [pausedResumeSlowdown, setPausedResumeSlowdown] =
+    useState(defaultSlowdown);
   const layoutSettings = useAppStore((state) => state.layoutSettings);
   const isPaused = useAppStore((state) => state.isPaused);
   const updateLayoutBoolean = useAppStore((state) => state.setLayoutBoolean);
@@ -66,6 +68,7 @@ export function useLayoutSettings({
   const resetLayoutSettings = useCallback(() => {
     slowdownBeforePauseRef.current = defaultSlowdown;
     slowdownBeforeFastForwardRef.current = defaultSlowdown;
+    setPausedResumeSlowdown(defaultSlowdown);
     resetStoredLayoutSettings();
   }, [defaultSlowdown, resetStoredLayoutSettings]);
 
@@ -77,6 +80,7 @@ export function useLayoutSettings({
     }
 
     slowdownBeforePauseRef.current = layoutSettings.slowDown ?? 0.1;
+    setPausedResumeSlowdown(slowdownBeforePauseRef.current);
     updateLayoutNumber("slowDown", pausedSlowdown);
     setIsPaused(true);
   }, [
@@ -97,6 +101,7 @@ export function useLayoutSettings({
 
       if (isPaused) {
         slowdownBeforePauseRef.current = restoredSlowdown;
+        setPausedResumeSlowdown(restoredSlowdown);
         return;
       }
 
@@ -108,6 +113,7 @@ export function useLayoutSettings({
 
     if (isPaused) {
       slowdownBeforePauseRef.current = fastForwardSlowdown;
+      setPausedResumeSlowdown(fastForwardSlowdown);
       return;
     }
 
@@ -121,7 +127,7 @@ export function useLayoutSettings({
   ]);
 
   const isFastForwarded =
-    (isPaused ? slowdownBeforePauseRef.current : layoutSettings.slowDown) ===
+    (isPaused ? pausedResumeSlowdown : layoutSettings.slowDown) ===
     fastForwardSlowdown;
 
   return {
