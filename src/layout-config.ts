@@ -101,3 +101,5 @@ export const defaultLayoutSettings: ForceAtlas2Settings = {
   slowDown: 1,
   strongGravityMode: false,
 };
+
+export const FAST_FORWARD_SLOWDOWN = 0.01;

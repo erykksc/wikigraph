@@ -14,7 +14,7 @@ import { useControlsOverlay } from "./hooks/useControlsOverlay";
 import { useGraphController } from "./hooks/useGraphController";
 import { useLayoutSettings } from "./hooks/useLayoutSettings";
 import { useStatusToast } from "./hooks/useStatusToast";
-import { defaultLayoutSettings } from "./layout-config";
+import { defaultLayoutSettings, FAST_FORWARD_SLOWDOWN } from "./layout-config";
 import { useAppStore } from "./store/useAppStore";
 
 const PAUSED_SLOWDOWN = 999999;
@@ -105,10 +105,16 @@ function App() {
     onClearStatus: clearStatus,
     onExpansionSucceeded: playExpansionSound,
   });
-  const { resetLayoutSettings, togglePause } = useLayoutSettings({
+  const {
+    isFastForwarded,
+    resetLayoutSettings,
+    toggleFastForward,
+    togglePause,
+  } = useLayoutSettings({
     graphRef,
     defaultSettings: defaultLayoutSettings,
     pausedSlowdown: PAUSED_SLOWDOWN,
+    fastForwardSlowdown: FAST_FORWARD_SLOWDOWN,
   });
   const { controlsPanelRef } = useControlsOverlay();
 
@@ -263,8 +269,10 @@ function App() {
             panelRef={controlsPanelRef}
             assetBaseUrl={assetBaseUrl}
             isAudioMuted={isAudioMuted}
+            isFastForwarded={isFastForwarded}
             onToggleOpen={toggleControls}
             onToggleAudioMuted={toggleAudioMuted}
+            onToggleFastForward={toggleFastForward}
             onTogglePause={togglePause}
             onReset={resetLayoutSettings}
           />

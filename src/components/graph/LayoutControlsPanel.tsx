@@ -2,6 +2,7 @@ import { cn } from "../../cn";
 import { layoutControls } from "../../layout-config";
 import { useAppStore } from "../../store/useAppStore";
 import AudioToggleButton from "./AudioToggleButton";
+import FastForwardButton from "./FastForwardButton";
 import LayoutNumberControl from "./LayoutNumberControl";
 import LayoutResetButton from "./LayoutResetButton";
 import PauseToggleButton from "./PauseToggleButton";
@@ -12,8 +13,10 @@ type LayoutControlsPanelProps = {
   panelRef: React.RefObject<HTMLElement | null>;
   assetBaseUrl: string;
   isAudioMuted: boolean;
+  isFastForwarded: boolean;
   onToggleOpen: () => void;
   onToggleAudioMuted: () => void;
+  onToggleFastForward: () => void;
   onTogglePause: () => void;
   onReset: () => void;
 };
@@ -22,8 +25,10 @@ const LayoutControlsPanel = ({
   panelRef,
   assetBaseUrl,
   isAudioMuted,
+  isFastForwarded,
   onToggleOpen,
   onToggleAudioMuted,
+  onToggleFastForward,
   onTogglePause,
   onReset,
 }: LayoutControlsPanelProps) => {
@@ -52,6 +57,11 @@ const LayoutControlsPanel = ({
             assetBaseUrl={assetBaseUrl}
             isPaused={isPaused}
             onTogglePause={onTogglePause}
+          />
+          <FastForwardButton
+            assetBaseUrl={assetBaseUrl}
+            isActive={isFastForwarded}
+            onFastForward={onToggleFastForward}
           />
           <SettingsToggleButton
             assetBaseUrl={assetBaseUrl}

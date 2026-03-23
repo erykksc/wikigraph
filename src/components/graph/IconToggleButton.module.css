@@ -29,6 +29,13 @@
   outline-offset: 2px;
 }
 
+.isActive {
+  border-radius: 999px;
+  background: linear-gradient(140deg, var(--accent), #f2994a);
+  color: #1b1a14;
+  box-shadow: 0 14px 32px rgba(242, 153, 74, 0.28);
+}
+
 .icon {
   width: 32px;
   height: 32px;

@@ -7,15 +7,19 @@ type UseLayoutSettingsParams = {
   graphRef: React.RefObject<GraphController | null>;
   defaultSettings: ForceAtlas2Settings;
   pausedSlowdown: number;
+  fastForwardSlowdown: number;
 };
 
 export function useLayoutSettings({
   graphRef,
   defaultSettings,
   pausedSlowdown,
+  fastForwardSlowdown,
 }: UseLayoutSettingsParams) {
   const hasAppliedInitialLayoutRef = useRef(false);
-  const slowdownBeforePauseRef = useRef(defaultSettings.slowDown ?? 0.1);
+  const defaultSlowdown = defaultSettings.slowDown ?? 0.1;
+  const slowdownBeforePauseRef = useRef(defaultSlowdown);
+  const slowdownBeforeFastForwardRef = useRef(defaultSlowdown);
   const layoutSettings = useAppStore((state) => state.layoutSettings);
   const isPaused = useAppStore((state) => state.isPaused);
   const updateLayoutBoolean = useAppStore((state) => state.setLayoutBoolean);
@@ -38,6 +42,13 @@ export function useLayoutSettings({
     graphRef.current.updateLayoutSettings(layoutSettings);
   }, [graphRef, layoutSettings]);
 
+  useEffect(() => {
+    if (!isPaused && layoutSettings.slowDown !== fastForwardSlowdown) {
+      slowdownBeforeFastForwardRef.current =
+        layoutSettings.slowDown ?? defaultSlowdown;
+    }
+  }, [defaultSlowdown, fastForwardSlowdown, isPaused, layoutSettings.slowDown]);
+
   const setLayoutBoolean = useCallback(
     (key: keyof ForceAtlas2Settings, value: boolean) => {
       updateLayoutBoolean(key, value);
@@ -53,9 +64,10 @@ export function useLayoutSettings({
   );
 
   const resetLayoutSettings = useCallback(() => {
-    slowdownBeforePauseRef.current = defaultSettings.slowDown ?? 0.1;
+    slowdownBeforePauseRef.current = defaultSlowdown;
+    slowdownBeforeFastForwardRef.current = defaultSlowdown;
     resetStoredLayoutSettings();
-  }, [defaultSettings.slowDown, resetStoredLayoutSettings]);
+  }, [defaultSlowdown, resetStoredLayoutSettings]);
 
   const togglePause = useCallback(() => {
     if (isPaused) {
@@ -75,12 +87,51 @@ export function useLayoutSettings({
     updateLayoutNumber,
   ]);
 
+  const toggleFastForward = useCallback(() => {
+    const currentSlowdown = isPaused
+      ? slowdownBeforePauseRef.current
+      : (layoutSettings.slowDown ?? defaultSlowdown);
+
+    if (currentSlowdown === fastForwardSlowdown) {
+      const restoredSlowdown = slowdownBeforeFastForwardRef.current;
+
+      if (isPaused) {
+        slowdownBeforePauseRef.current = restoredSlowdown;
+        return;
+      }
+
+      updateLayoutNumber("slowDown", restoredSlowdown);
+      return;
+    }
+
+    slowdownBeforeFastForwardRef.current = currentSlowdown;
+
+    if (isPaused) {
+      slowdownBeforePauseRef.current = fastForwardSlowdown;
+      return;
+    }
+
+    updateLayoutNumber("slowDown", fastForwardSlowdown);
+  }, [
+    defaultSlowdown,
+    fastForwardSlowdown,
+    isPaused,
+    layoutSettings.slowDown,
+    updateLayoutNumber,
+  ]);
+
+  const isFastForwarded =
+    (isPaused ? slowdownBeforePauseRef.current : layoutSettings.slowDown) ===
+    fastForwardSlowdown;
+
   return {
     layoutSettings,
     isPaused,
+    isFastForwarded,
     setLayoutBoolean,
     setLayoutNumber,
     resetLayoutSettings,
+    toggleFastForward,
     togglePause,
   };
 }
