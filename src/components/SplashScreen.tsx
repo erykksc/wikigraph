@@ -257,8 +257,8 @@ const SplashScreen = ({
                 <kbd>m</kbd> mutes or unmutes app audio.
               </p>
               <p>
-                <kbd>f</kbd> fits the graph, and <kbd>space</kbd> pauses or
-                resumes the layout.
+                <kbd>f</kbd> fits the graph, <kbd>s</kbd> fast-forwards the
+                layout, and <kbd>space</kbd> pauses or resumes it.
               </p>
               <p>
                 <kbd>r</kbd> resets the graph.

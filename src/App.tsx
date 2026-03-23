@@ -183,6 +183,7 @@ function App() {
     onOpenSelectedArticle: openSelectedArticle,
     onResetGraph: handleResetGraph,
     onToggleAudioMuted: toggleAudioMuted,
+    onToggleFastForward: toggleFastForward,
     onTogglePause: togglePause,
   });
 

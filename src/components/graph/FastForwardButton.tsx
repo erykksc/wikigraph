@@ -17,7 +17,7 @@ const FastForwardButton = ({
       type="button"
       className={cn(styles.root, isActive && styles.isActive)}
       onClick={onFastForward}
-      title="Set layout slowdown to 0.01"
+      title="Speed up node movement\n\nshortcut: s"
       aria-label="Enable fast forward"
       aria-pressed={isActive}
     >
