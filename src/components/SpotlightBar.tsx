@@ -33,10 +33,17 @@ const SpotlightBar = ({ isLoading, onSearch, onClose }: SpotlightBarProps) => {
     useState(-1);
   const [isSuggestionsLoading, setIsSuggestionsLoading] = useState(false);
   const trimmedSeed = seed.trim();
+  const hasSuggestionQuery = trimmedSeed.length >= MIN_SUGGESTION_QUERY_LENGTH;
+  const visibleSuggestions = hasSuggestionQuery ? suggestions : [];
+  const isVisibleSuggestionsLoading =
+    hasSuggestionQuery && isSuggestionsLoading;
+  const visibleHighlightedSuggestionIndex = hasSuggestionQuery
+    ? highlightedSuggestionIndex
+    : -1;
   const shouldShowSuggestions =
     isSuggestionsOpen &&
-    trimmedSeed.length >= MIN_SUGGESTION_QUERY_LENGTH &&
-    (isSuggestionsLoading || suggestions.length > 0);
+    hasSuggestionQuery &&
+    (isVisibleSuggestionsLoading || visibleSuggestions.length > 0);
 
   const closeSuggestions = useCallback(() => {
     setIsSuggestionsOpen(false);
@@ -77,26 +84,20 @@ const SpotlightBar = ({ isLoading, onSearch, onClose }: SpotlightBarProps) => {
   useEffect(() => {
     abortControllerRef.current?.abort();
     abortControllerRef.current = null;
+    latestRequestRef.current += 1;
 
     if (trimmedSeed.length < MIN_SUGGESTION_QUERY_LENGTH) {
-      setSuggestions([]);
-      setIsSuggestionsLoading(false);
-      closeSuggestions();
       return;
     }
 
     if (skipNextSuggestionFetchRef.current === trimmedSeed) {
       skipNextSuggestionFetchRef.current = null;
-      setSuggestions([]);
-      setIsSuggestionsLoading(false);
-      closeSuggestions();
       return;
     }
 
     skipNextSuggestionFetchRef.current = null;
 
-    const requestId = latestRequestRef.current + 1;
-    latestRequestRef.current = requestId;
+    const requestId = latestRequestRef.current;
     setIsSuggestionsLoading(true);
 
     const timeoutId = window.setTimeout(async () => {
@@ -141,7 +142,7 @@ const SpotlightBar = ({ isLoading, onSearch, onClose }: SpotlightBarProps) => {
       abortControllerRef.current?.abort();
       abortControllerRef.current = null;
     };
-  }, [closeSuggestions, querySource, trimmedSeed]);
+  }, [querySource, trimmedSeed]);
 
   useEffect(() => {
     return () => {
@@ -167,7 +168,10 @@ const SpotlightBar = ({ isLoading, onSearch, onClose }: SpotlightBarProps) => {
               value={seed}
               onChange={(event) => setSeed(event.target.value)}
               onFocus={() => {
-                if (suggestions.length > 0 || isSuggestionsLoading) {
+                if (
+                  visibleSuggestions.length > 0 ||
+                  isVisibleSuggestionsLoading
+                ) {
                   setIsSuggestionsOpen(true);
                 }
               }}
@@ -179,7 +183,7 @@ const SpotlightBar = ({ isLoading, onSearch, onClose }: SpotlightBarProps) => {
                 }, 0);
               }}
               onKeyDown={(event) => {
-                if (!shouldShowSuggestions || suggestions.length === 0) {
+                if (!shouldShowSuggestions || visibleSuggestions.length === 0) {
                   if (event.key === "Escape") {
                     event.stopPropagation();
                     closeSuggestions();
@@ -190,7 +194,7 @@ const SpotlightBar = ({ isLoading, onSearch, onClose }: SpotlightBarProps) => {
                 if (event.key === "ArrowDown") {
                   event.preventDefault();
                   setHighlightedSuggestionIndex((current) =>
-                    current >= suggestions.length - 1 ? 0 : current + 1,
+                    current >= visibleSuggestions.length - 1 ? 0 : current + 1,
                   );
                   return;
                 }
@@ -198,14 +202,14 @@ const SpotlightBar = ({ isLoading, onSearch, onClose }: SpotlightBarProps) => {
                 if (event.key === "ArrowUp") {
                   event.preventDefault();
                   setHighlightedSuggestionIndex((current) =>
-                    current <= 0 ? suggestions.length - 1 : current - 1,
+                    current <= 0 ? visibleSuggestions.length - 1 : current - 1,
                   );
                   return;
                 }
 
                 if (event.key === "Enter") {
                   const highlightedSuggestion =
-                    suggestions[highlightedSuggestionIndex];
+                    visibleSuggestions[visibleHighlightedSuggestionIndex];
 
                   if (highlightedSuggestion) {
                     event.preventDefault();
@@ -226,8 +230,8 @@ const SpotlightBar = ({ isLoading, onSearch, onClose }: SpotlightBarProps) => {
               aria-expanded={shouldShowSuggestions}
               aria-controls={suggestionListId}
               aria-activedescendant={
-                highlightedSuggestionIndex >= 0
-                  ? `${suggestionListId}-${highlightedSuggestionIndex}`
+                visibleHighlightedSuggestionIndex >= 0
+                  ? `${suggestionListId}-${visibleHighlightedSuggestionIndex}`
                   : undefined
               }
             />
@@ -238,19 +242,19 @@ const SpotlightBar = ({ isLoading, onSearch, onClose }: SpotlightBarProps) => {
                   id={suggestionListId}
                   role="listbox"
                 >
-                  {isSuggestionsLoading ? (
+                  {isVisibleSuggestionsLoading ? (
                     <li className={styles.suggestionsStatus}>
                       Searching articles...
                     </li>
                   ) : null}
-                  {suggestions.map((suggestion, index) => (
+                  {visibleSuggestions.map((suggestion, index) => (
                     <li key={suggestion} role="presentation">
                       <button
                         type="button"
                         id={`${suggestionListId}-${index}`}
                         className={cn(
                           styles.suggestionButton,
-                          index === highlightedSuggestionIndex &&
+                          index === visibleHighlightedSuggestionIndex &&
                             styles.isSuggestionActive,
                         )}
                         onMouseDown={(event) => event.preventDefault()}
@@ -259,7 +263,9 @@ const SpotlightBar = ({ isLoading, onSearch, onClose }: SpotlightBarProps) => {
                         }
                         onClick={() => submitSuggestion(suggestion)}
                         role="option"
-                        aria-selected={index === highlightedSuggestionIndex}
+                        aria-selected={
+                          index === visibleHighlightedSuggestionIndex
+                        }
                       >
                         {suggestion}
                       </button>
